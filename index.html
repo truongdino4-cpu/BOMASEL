@@ -11,82 +11,64 @@
     <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
-        /* --- CẤU HÌNH IN ẤN CHUYÊN NGHIỆP --- */
+        /* --- MÔ PHỎNG GIẤY A4 TRÊN MÀN HÌNH XEM TRƯỚC --- */
+        body { margin: 0; padding: 0; }
+        
+        .is-preview-mode {
+            /* Mô phỏng kích thước thật của giấy */
+            width: var(--preview-width, 297mm) !important;
+            max-width: var(--preview-width, 297mm) !important;
+            min-height: var(--preview-height, 210mm) !important;
+            margin: 0 auto !important;
+            padding: 12mm 15mm !important;
+            background: white !important;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5) !important;
+        }
+
+        /* --- CẤU HÌNH IN ẤN CHUYÊN NGHIỆP TỚI MÁY IN --- */
         @media print {
-            /* Lệnh @page sẽ được React can thiệp động bằng Javascript để xoay dọc/ngang */
             body { 
                 background-color: white !important; 
                 -webkit-print-color-adjust: exact; 
-                color-adjust: exact; 
+                color-adjust: exact;
+                padding: 0 !important; 
+                margin: 0 !important;
             }
-            /* Ẩn các nút công cụ, viền input */
             .print\:hidden { display: none !important; }
             
-            /* Tẩy trắng toàn bộ phông nền để in sạch sẽ */
-            .preview-container {
+            /* XÓA BỎ MỌI KHOẢNG TRẮNG THỪA & KHUÔN MÔ PHỎNG KHI IN THẬT */
+            .is-preview-mode, .preview-container {
                 width: 100% !important;
                 max-width: none !important;
+                min-height: auto !important; /* QUAN TRỌNG: Xóa khoảng trắng dưới đáy */
                 margin: 0 !important;
                 padding: 0 !important;
                 box-shadow: none !important;
             }
             
-            /* Tự động ngắt trang gọn gàng */
-            .page-break-before {
-                page-break-before: always;
-            }
+            /* Làm tàng hình placeholder khi in */
+            textarea::placeholder, input::placeholder { color: transparent !important; }
+            
+            /* Hỗ trợ ngắt trang */
+            .page-break-before { page-break-before: always; }
         }
         
-        /* --- MÔ PHỎNG GIẤY A4 TRÊN MÀN HÌNH XEM TRƯỚC --- */
-        body:has(.is-preview-mode) {
-            background-color: #525659; /* Màu nền xám của trình đọc PDF */
-            padding-bottom: 50px;
-        }
-
-        .preview-container {
-            transition: all 0.4s ease;
-        }
-
-        .is-preview-mode {
-            /* Chiều rộng/cao sẽ được React nhồi vào qua biến CSS inline */
-            width: var(--preview-width, 297mm) !important;
-            max-width: var(--preview-width, 297mm) !important;
-            min-height: var(--preview-height, 210mm) !important;
-            
-            margin-left: auto !important;
-            margin-right: auto !important;
-            margin-top: 20px !important;
-            
-            /* Căn lề giả lập mép giấy */
-            padding: 12mm 15mm !important; 
-            
-            background: white !important;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5) !important;
-            border-radius: 2px !important;
-            
-            /* Chống tràn ngang nếu màn hình quá nhỏ */
-            transform-origin: top center;
-        }
-        
-        /* Tinh chỉnh thanh cuộn cho mượt */
+        /* Tinh chỉnh scrollbar */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #555; }
     </style>
 </head>
-<body class="bg-gray-100 transition-colors duration-300 font-sans">
+<body>
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useRef, useMemo, useEffect } = React;
 
-        // --- BỘ ICON THAY THẾ CHO LUCIDE ---
+        // --- ICONS ---
         const Icon = ({ children, size = 24, className = "", title="" }) => (
-            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-                {title && <title>{title}</title>}
-                {children}
-            </svg>
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{title && <title>{title}</title>}{children}</svg>
         );
         const Trash2 = (p) => <Icon {...p}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></Icon>;
         const Plus = (p) => <Icon {...p}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></Icon>;
@@ -94,12 +76,11 @@
         const Upload = (p) => <Icon {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></Icon>;
         const Printer = (p) => <Icon {...p}><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></Icon>;
         const X = (p) => <Icon {...p}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></Icon>;
-        const ImageIcon = (p) => <Icon {...p}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></Icon>;
 
+        // --- COMPONENTS ---
         const EditableInput = ({ value, onChange, placeholder = "", className = "", isTextArea = false, isEditing = true }) => {
-            // Khi xuất PDF (!isEditing), render thẻ div tĩnh tàng hình hoàn hảo, chống rớt chữ
             if (!isEditing) {
-                if (!value && value !== 0) return null; // Ẩn luôn nếu rỗng
+                if (!value && value !== 0) return null;
                 return <div className={`whitespace-pre-wrap break-words min-w-0 ${className}`}>{value}</div>;
             }
             return isTextArea ? (
@@ -133,21 +114,20 @@
                 }
             };
             return (
-                <div className="flex flex-col items-center justify-center w-full h-full min-h-[60px]">
+                <div className="flex flex-col items-center justify-center w-full h-full min-h-[50px]">
                     {value ? (
                         <div className="relative group w-full h-full flex items-center justify-center">
-                            <img src={value} alt="Uploaded" className="max-w-full object-contain cursor-pointer" style={{ maxHeight: '70px' }} onClick={() => isEditing && fileInputRef.current?.click()} />
+                            <img src={value} alt="Uploaded" className="max-w-full object-contain cursor-pointer" style={{ maxHeight: '60px' }} onClick={() => isEditing && fileInputRef.current?.click()} />
                             {isEditing && (
-                                <button onClick={(e) => { e.stopPropagation(); onChange(''); }} className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity print:hidden" title="Xóa ảnh">
+                                <button onClick={(e) => { e.stopPropagation(); onChange(''); }} className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity print:hidden" title="Xóa ảnh">
                                     <X size={12} />
                                 </button>
                             )}
                         </div>
                     ) : (
                         isEditing && (
-                            <div onClick={() => fileInputRef.current?.click()} className="cursor-pointer flex flex-col items-center justify-center text-gray-300 hover:text-blue-500 print:hidden border border-dashed border-gray-300 rounded p-1 w-full h-full min-h-[60px]">
-                                <ImageIcon size={20} />
-                                <span className="text-[10px] mt-1 text-center text-gray-400">Tải ảnh</span>
+                            <div onClick={() => fileInputRef.current?.click()} className="cursor-pointer flex flex-col items-center justify-center text-gray-300 hover:text-blue-500 print:hidden w-full h-full min-h-[50px]">
+                                <span className="text-[10px] text-center text-gray-400 border border-dashed border-gray-300 rounded p-1 w-full">Tải ảnh</span>
                             </div>
                         )
                     )}
@@ -156,13 +136,14 @@
             );
         };
 
+        // --- MAIN APP ---
         function App() {
             const [activeTab, setActiveTab] = useState('summary');
             const [exchangeRate, setExchangeRate] = useState(25400);
             const [currency, setCurrency] = useState('USD');
             const [includeAudio, setIncludeAudio] = useState(true);
             const [isPreview, setIsPreview] = useState(false);
-            const [printOrientation, setPrintOrientation] = useState('landscape');
+            const [printOrientation, setPrintOrientation] = useState('portrait'); // Đổi mặc định thành Dọc
 
             useEffect(() => {
                 let styleEl = document.getElementById('dynamic-print-style');
@@ -171,7 +152,6 @@
                     styleEl.id = 'dynamic-print-style';
                     document.head.appendChild(styleEl);
                 }
-                // Ép margin nhỏ lại để có không gian, và xoay giấy theo ý muốn
                 styleEl.innerHTML = `@page { size: A4 ${printOrientation}; margin: 10mm; }`;
             }, [printOrientation]);
 
@@ -194,7 +174,6 @@
                 return amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
             };
 
-            // --- DỮ LIỆU BẢNG BOM GỐC ---
             const [bomMap, setBomMap] = useState({
                 floors: [
                     { id: 'tret', name: 'Tầng Trệt' },
@@ -220,16 +199,16 @@
                     { id: 'v3', category: 'IV', categoryName: 'An ninh', name: 'Còi', desc: 'Còi báo động an ninh cường độ âm thanh cao.', brand: 'PRC', unit: 'Chiếc', price: 25, quantities: { tret: 1, t1: 0, t2: 0 } },
                     { id: 'v4', category: 'IV', categoryName: 'An ninh', name: 'Bộ báo tin nhắn', desc: 'Nhắn tin SMS và gọi điện trực tiếp đến SĐT đăng ký.', brand: 'ASEL', unit: 'Bộ', price: 500, quantities: { tret: 1, t1: 0, t2: 0 } },
                     { id: 'ac1', category: 'V', categoryName: 'Điều hòa', name: 'Điều khiển điều hòa VRV (Cool Master)', desc: 'Điều khiển và giám sát trạng thái thực tới cả các dàn lạnh trong nhà.\nChỉ cần đi 1 cáp dây kết nối đến dàn nóng trung tâm.\nPhản hồi 02 chiều.', brand: 'COOLAUTOMATION - ISRAEL', unit: 'Bộ', price: 3500, quantities: { tret: 1, t1: 0, t2: 0 } },
-                    { id: 'c1', category: 'VI', categoryName: 'Tủ điện', name: 'Chuông cửa IP ngoài trời', desc: 'Gắn âm, tích hợp smartphone, xem lịch sử người bấm.\nChất liệu kim loại, camera hồng ngoại. Kết hợp relay mở cổng.\nKết nối đàm thoại với màn hình cảm ứng, điện thoại thông minh từ bất cứ đâu. Góc nhìn 180°.', brand: 'DB-GERMANY', unit: 'Chiếc', price: 1500, quantities: { tret: 1, t1: 0, t2: 0 } },
-                    { id: 't1', category: 'VI', categoryName: 'Tủ điện', name: 'Bộ xử lý mạng bus IP (Din AP4)', desc: '1GB SDRAM and 8 GB flash memory.\nTốc độ xử lý vượt trội 100 Mb/s.\nHỗ trợ RS-232, RS-422, RS-485.\nHỗ trợ điều khiển thiết bị qua hồng ngoại lên đến 1.2MHz.', brand: 'CRESTRON - USA/MEXICO', unit: 'Bộ', price: 2800, quantities: { tret: 1, t1: 0, t2: 0 } },
-                    { id: 't2', category: 'VI', categoryName: 'Tủ điện', name: 'Bộ cấp nguồn hệ thống 24V', desc: 'Công suất 60W Cresnet.\nNguồn vào 100-277V AC.', brand: 'CRESTRON - USA/MEXICO', unit: 'Bộ', price: 400, quantities: { tret: 3, t1: 0, t2: 0 } },
-                    { id: 't3', category: 'VI', categoryName: 'Tủ điện', name: 'Bộ khuếch đại', desc: 'Bộ khuếch đại tín hiệu hệ thống.', brand: 'CRESTRON - USA/MEXICO', unit: 'Bộ', price: 600, quantities: { tret: 1, t1: 0, t2: 0 } },
-                    { id: 't4', category: 'VI', categoryName: 'Tủ điện', name: 'Bộ nhận tín hiệu đầu vào công tắc', desc: 'Nhận tín hiệu đầu vào từ các nút bấm cơ.', brand: 'CRESTRON - USA/MEXICO', unit: 'Bộ', price: 550, quantities: { tret: 2, t1: 0, t2: 0 } },
-                    { id: 't5', category: 'VI', categoryName: 'Tủ điện', name: 'Bộ mở rộng Lutron', desc: 'Bộ mở rộng tín hiệu không dây cho các thiết bị Lutron.', brand: 'LUTRON - USA/PRC', unit: 'Bộ', price: 400, quantities: { tret: 3, t1: 0, t2: 0 } },
-                    { id: 't6', category: 'VI', categoryName: 'Tủ điện', name: 'Vật tư phụ', desc: '(jack chuyên dụng, dây điều khiển, lạt nhựa, băng keo, đầu nối...)', brand: 'VIỆT NAM', unit: 'Gói', price: 500, quantities: { tret: 1, t1: 0, t2: 0 } },
-                    { id: 't7', category: 'VI', categoryName: 'Tủ điện', name: 'Tủ điện', desc: 'Tủ điện 2 lớp cánh, sơn tĩnh điện dày 1.5mm', brand: 'VIỆT NAM', unit: 'Bộ', price: 500, quantities: { tret: 2, t1: 0, t2: 0 } },
-                    { id: 'cp1', category: 'VII', categoryName: 'CP - Chi phí triển khai', name: 'Thiết kế lập trình (12%)', desc: '', brand: '', unit: 'Gói', price: 0, quantities: { tret: 1, t1: 0, t2: 0 }, isImplementationCost: true, type: 'design' },
-                    { id: 'cp2', category: 'VII', categoryName: 'CP - Chi phí triển khai', name: 'Thi công lắp đặt (13%)', desc: '', brand: '', unit: 'Gói', price: 0, quantities: { tret: 1, t1: 0, t2: 0 }, isImplementationCost: true, type: 'install' }
+                    { id: 'c1', category: 'VI', categoryName: 'Chuông hình', name: 'Chuông cửa IP ngoài trời', desc: 'Gắn âm, tích hợp smartphone, xem lịch sử người bấm.\nChất liệu kim loại, camera hồng ngoại. Kết hợp relay mở cổng.\nKết nối đàm thoại với màn hình cảm ứng, điện thoại thông minh từ bất cứ đâu. Góc nhìn 180°.', brand: 'DB-GERMANY', unit: 'Chiếc', price: 1500, quantities: { tret: 1, t1: 0, t2: 0 } },
+                    { id: 't1', category: 'VII', categoryName: 'Tủ điện', name: 'Bộ xử lý mạng bus IP (Din AP4)', desc: '1GB SDRAM and 8 GB flash memory.\nTốc độ xử lý vượt trội 100 Mb/s.\nHỗ trợ RS-232, RS-422, RS-485.\nHỗ trợ điều khiển thiết bị qua hồng ngoại lên đến 1.2MHz.', brand: 'CRESTRON - USA/MEXICO', unit: 'Bộ', price: 2800, quantities: { tret: 1, t1: 0, t2: 0 } },
+                    { id: 't2', category: 'VII', categoryName: 'Tủ điện', name: 'Bộ cấp nguồn hệ thống 24V', desc: 'Công suất 60W Cresnet.\nNguồn vào 100-277V AC.', brand: 'CRESTRON - USA/MEXICO', unit: 'Bộ', price: 400, quantities: { tret: 3, t1: 0, t2: 0 } },
+                    { id: 't3', category: 'VII', categoryName: 'Tủ điện', name: 'Bộ khuếch đại', desc: 'Bộ khuếch đại tín hiệu hệ thống.', brand: 'CRESTRON - USA/MEXICO', unit: 'Bộ', price: 600, quantities: { tret: 1, t1: 0, t2: 0 } },
+                    { id: 't4', category: 'VII', categoryName: 'Tủ điện', name: 'Bộ nhận tín hiệu đầu vào công tắc', desc: 'Nhận tín hiệu đầu vào từ các nút bấm cơ.', brand: 'CRESTRON - USA/MEXICO', unit: 'Bộ', price: 550, quantities: { tret: 2, t1: 0, t2: 0 } },
+                    { id: 't5', category: 'VII', categoryName: 'Tủ điện', name: 'Bộ mở rộng Lutron', desc: 'Bộ mở rộng tín hiệu không dây cho các thiết bị Lutron.', brand: 'LUTRON - USA/PRC', unit: 'Bộ', price: 400, quantities: { tret: 3, t1: 0, t2: 0 } },
+                    { id: 't6', category: 'VII', categoryName: 'Tủ điện', name: 'Vật tư phụ', desc: '(jack chuyên dụng, dây điều khiển, lạt nhựa, băng keo, đầu nối...)', brand: 'VIỆT NAM', unit: 'Gói', price: 500, quantities: { tret: 1, t1: 0, t2: 0 } },
+                    { id: 't7', category: 'VII', categoryName: 'Tủ điện', name: 'Tủ điện', desc: 'Tủ điện 2 lớp cánh, sơn tĩnh điện dày 1.5mm', brand: 'VIỆT NAM', unit: 'Bộ', price: 500, quantities: { tret: 2, t1: 0, t2: 0 } },
+                    { id: 'cp1', category: 'VIII', categoryName: 'CP - Chi phí triển khai', name: 'Thiết kế lập trình (12%)', desc: '', brand: '', unit: 'Gói', price: 0, quantities: { tret: 1, t1: 0, t2: 0 }, isImplementationCost: true, type: 'design' },
+                    { id: 'cp2', category: 'VIII', categoryName: 'CP - Chi phí triển khai', name: 'Thi công lắp đặt (13%)', desc: '', brand: '', unit: 'Gói', price: 0, quantities: { tret: 1, t1: 0, t2: 0 }, isImplementationCost: true, type: 'install' }
                 ]
             });
 
@@ -248,7 +227,6 @@
                 { label: 'Phạm vi không cung cấp (chưa bao gồm):', value: 'Thiết bị đầu cuối (thiết bị được điều khiển): Đèn, điều hòa, rèm động cơ, động cơ cổng, bơm, quạt hút\nCông tắc và ổ cắm điện thường (chủ đầu tư chọn sau)\nCamera (bên ME cấp). Smart home tích hợp miễn phí tất cả các hãng camera IP\nChi phí vật tư và nhân công thi công, ống, dây (dây điện, dây điều khiển, dây loa)' }
             ]);
 
-            // --- LƯU / MỞ FILE ---
             const handleExportData = () => {
                 const dataToSave = { headerInfo, bomMap, audioData, commercialTerms, includeAudio, exchangeRate, currency };
                 const blob = new Blob([JSON.stringify(dataToSave, null, 2)], { type: 'application/json' });
@@ -282,7 +260,7 @@
 
             const hardwareTotal = useMemo(() => {
                 return bomMap.items.reduce((sum, item) => {
-                    if (item.isImplementationCost) return sum; // Loại trừ 2 dòng chi phí khỏi phép cộng
+                    if (item.isImplementationCost) return sum;
                     const totalQty = bomMap.floors.reduce((qSum, f) => qSum + (parseFloat(item.quantities[f.id]) || 0), 0);
                     return sum + (totalQty * (parseFloat(item.price) || 0));
                 }, 0);
@@ -297,10 +275,12 @@
                 bomMap.floors.forEach(f => { calc.floors[f.id] = { input: 0, dinReported: 0, dinNeed: 0, missing: 0 }; });
 
                 bomMap.items.forEach(item => {
-                    const isInputDevice = item.isInput || (item.name && item.name.toLowerCase().includes('cảm biến'));
+                    const nameLower = (item.name || "").toLowerCase();
+                    // Nhận diện Input
+                    const isInputDevice = item.isInput || nameLower.includes('cảm biến trần') || nameLower.includes('cảm biến cầu thang') || nameLower.includes('cảm biến từ');
                     const isMechanical = item.isMechanical;
                     const buttons = item.buttons || 1;
-                    const isDinController = item.isDinController; // Định nghĩa sẵn ở Data gốc
+                    const isDinController = item.isDinController;
 
                     bomMap.floors.forEach(f => {
                         const qty = parseFloat(item.quantities[f.id]) || 0;
@@ -319,11 +299,11 @@
                     });
                 });
 
-                // Tính toán thiếu/đủ
+                // Tính số bộ cần / thiếu
                 bomMap.floors.forEach(f => {
                     calc.floors[f.id].dinNeed = Math.ceil(calc.floors[f.id].input / 8);
                     const diff = calc.floors[f.id].dinNeed - calc.floors[f.id].dinReported;
-                    calc.floors[f.id].missing = diff > 0 ? diff : 0; // Luôn >= 0
+                    calc.floors[f.id].missing = diff > 0 ? diff : 0;
                 });
                 calc.total.dinNeed = Math.ceil(calc.total.input / 8);
                 const totalDiff = calc.total.dinNeed - calc.total.dinReported;
@@ -338,7 +318,6 @@
                     let systemsMap = {};
                     bomMap.items.forEach(item => {
                         const qty = parseFloat(item.quantities[f.id]) || 0;
-                        // Ẩn Công tắc cơ & Chi phí triển khai khỏi Bảng chi tiết. Chỉ hiện thiết bị có qty > 0.
                         if (qty > 0 && !item.isMechanical && !item.isImplementationCost) {
                             const isCommonSystem = ['IV', 'V', 'VI', 'VII'].includes(item.category);
                             if (!isCommonSystem) {
@@ -351,7 +330,6 @@
                     if (Object.keys(systemsMap).length > 0) floorsData.push({ id: f.id, name: f.name, systems: Object.values(systemsMap) });
                 });
 
-                // Gom hệ thống chung
                 let commonSystemsMap = {};
                 bomMap.items.forEach(item => {
                     const isCommonSystem = ['IV', 'V', 'VI', 'VII'].includes(item.category);
@@ -364,7 +342,6 @@
                         }
                     }
                 });
-                // Luôn nằm dưới cùng (Push sau cùng)
                 if (Object.keys(commonSystemsMap).length > 0) floorsData.push({ id: 'common', name: 'HỆ THỐNG CHUNG', systems: Object.values(commonSystemsMap) });
 
                 return floorsData;
@@ -373,10 +350,17 @@
             const updateBOMQuantity = (floorId, itemId, newQtyStr) => {
                 const qty = parseFloat(newQtyStr);
                 const finalQty = isNaN(qty) ? '' : qty;
-                setBomMap(prev => ({
-                    ...prev,
-                    items: prev.items.map(item => item.id === itemId ? { ...item, quantities: { ...item.quantities, [floorId]: finalQty } } : item)
-                }));
+                
+                setBomMap(prev => {
+                    const newItems = prev.items.map(item => {
+                        if (item.id === itemId) {
+                            // Cập nhật SL. Nhờ useMemo, detailedData tự động clone sang Chi Tiết
+                            return { ...item, quantities: { ...item.quantities, [floorId]: finalQty } };
+                        }
+                        return item;
+                    });
+                    return { ...prev, items: newItems };
+                });
             };
 
             const addFloor = () => {
@@ -392,7 +376,6 @@
                 setBomMap(prev => ({ ...prev, floors: prev.floors.filter(f => f.id !== floorId) }));
             };
 
-            // Khi bấm thùng rác ở Chi Tiết: Không xóa hẳn mà đưa SL về rỗng để giữ Thư viện BOM
             const deleteItemFromDetail = (floorId, itemId) => { 
                 updateBOMQuantity(floorId, itemId, ''); 
             };
@@ -411,14 +394,14 @@
                             <table className="w-full border-collapse border border-black min-w-[800px] text-[13px] table-fixed">
                                 <thead>
                                     <tr className="bg-[#d5e8d4] font-bold text-center">
-                                        <td className="border border-black p-1.5 w-10">Mã</td>
-                                        <td className="border border-black p-1.5">Hạng mục</td>
-                                        <td className="border border-black p-1.5 w-14">ĐVT</td>
+                                        <td className="border border-black p-1 w-10">Mã</td>
+                                        <td className="border border-black p-1">Hạng mục</td>
+                                        <td className="border border-black p-1 w-14">ĐVT</td>
                                         {bomMap.floors.map(f => (
-                                            <td key={f.id} className="border border-black p-1.5 w-14 group relative">
+                                            <td key={f.id} className="border border-black p-1 w-12 group relative">
                                                 <EditableInput value={f.name} onChange={(v) => {
                                                     setBomMap({ ...bomMap, floors: bomMap.floors.map(fl => fl.id === f.id ? { ...fl, name: v } : fl) });
-                                                }} className="text-center font-bold" isEditing={!isPreview} />
+                                                }} className="text-center font-bold text-xs" isEditing={!isPreview} />
                                                 {!isPreview && (
                                                     <button onClick={() => removeFloor(f.id)} className="absolute -top-2 -right-2 text-red-500 opacity-0 group-hover:opacity-100 bg-white rounded-full border shadow print:hidden">
                                                         <X size={14} />
@@ -426,17 +409,17 @@
                                                 )}
                                             </td>
                                         ))}
-                                        <td className="border border-black p-1.5 w-14">Tổng</td>
-                                        <td className="border border-black p-1.5 w-20">Đơn giá</td>
-                                        <td className="border border-black p-1.5 w-24">Thành tiền</td>
+                                        <td className="border border-black p-1 w-12">Tổng</td>
+                                        <td className="border border-black p-1 w-20">Đơn giá</td>
+                                        <td className="border border-black p-1 w-24">Thành tiền</td>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {Object.keys(groupedItems).map((catKey) => (
                                         <React.Fragment key={catKey}>
                                             <tr className="bg-[#e2efda] font-bold">
-                                                <td className="border border-black p-1.5 text-center">{catKey}</td>
-                                                <td className="border border-black p-1.5 uppercase" colSpan={bomMap.floors.length + 4}>{groupedItems[catKey].categoryName}</td>
+                                                <td className="border border-black p-1 text-center">{catKey}</td>
+                                                <td className="border border-black p-1 uppercase" colSpan={bomMap.floors.length + 4}>{groupedItems[catKey].categoryName}</td>
                                             </tr>
                                             {groupedItems[catKey].items.map((item, idx) => {
                                                 const totalQty = bomMap.floors.reduce((sum, f) => sum + (parseFloat(item.quantities[f.id]) || 0), 0);
@@ -452,7 +435,7 @@
                                                         <td className="border border-black p-1">
                                                             <EditableInput value={item.name} onChange={(v) => {
                                                                 setBomMap({ ...bomMap, items: bomMap.items.map(i => i.id === item.id ? { ...i, name: v } : i) });
-                                                            }} isEditing={!isPreview} />
+                                                            }} isEditing={!isPreview} className="text-xs" />
                                                         </td>
                                                         <td className="border border-black p-1 text-center">{item.unit}</td>
                                                         {item.isImplementationCost ? (
@@ -486,51 +469,51 @@
                                         </React.Fragment>
                                     ))}
 
-                                    {/* Bảng Tính Toán IO Tích hợp */}
-                                    <tr className="bg-[#e2efda] font-bold mt-4">
-                                        <td className="border border-black p-1.5 text-center">IX</td>
-                                        <td className="border border-black p-1.5 uppercase" colSpan={bomMap.floors.length + 4}>TÍNH TOÁN ĐẦU VÀO IO</td>
+                                    {/* Bảng IO Tích hợp */}
+                                    <tr className="bg-[#e2efda] font-bold mt-2">
+                                        <td className="border border-black p-1 text-center">IX</td>
+                                        <td className="border border-black p-1 uppercase" colSpan={bomMap.floors.length + 4}>TÍNH TOÁN ĐẦU VÀO IO</td>
                                     </tr>
                                     <tr>
-                                        <td className="border border-black p-1.5 text-center font-bold">1</td>
-                                        <td className="border border-black p-1.5 text-blue-900">Tổng số đầu vào Input (Cảm biến + Công tắc)</td>
-                                        <td className="border border-black p-1.5 text-center">-</td>
+                                        <td className="border border-black p-1 text-center font-bold">1</td>
+                                        <td className="border border-black p-1 text-blue-900">Tổng số đầu vào Input (Cảm biến + Công tắc)</td>
+                                        <td className="border border-black p-1 text-center">-</td>
                                         {bomMap.floors.map(f => (
-                                            <td key={f.id} className="border border-black p-1.5 text-center font-bold bg-orange-50">{ioCalculations.floors[f.id].input || ''}</td>
+                                            <td key={f.id} className="border border-black p-1 text-center font-bold bg-orange-50">{ioCalculations.floors[f.id].input || ''}</td>
                                         ))}
-                                        <td className="border border-black p-1.5 text-center font-bold bg-orange-50">{ioCalculations.total.input || ''}</td>
-                                        <td colSpan={2} className="border border-black p-1.5 text-center">-</td>
+                                        <td className="border border-black p-1 text-center font-bold bg-orange-50">{ioCalculations.total.input || ''}</td>
+                                        <td colSpan={2} className="border border-black p-1 text-center">-</td>
                                     </tr>
                                     <tr>
-                                        <td className="border border-black p-1.5 text-center font-bold">2</td>
-                                        <td className="border border-black p-1.5">Số bộ DIN8s-8i CẦN (Chia 8 làm tròn lên)</td>
-                                        <td className="border border-black p-1.5 text-center">Bộ</td>
+                                        <td className="border border-black p-1 text-center font-bold">2</td>
+                                        <td className="border border-black p-1">Số bộ DIN8s-8i CẦN (Chia 8 làm tròn lên)</td>
+                                        <td className="border border-black p-1 text-center">Bộ</td>
                                         {bomMap.floors.map(f => (
-                                            <td key={f.id} className="border border-black p-1.5 text-center">{ioCalculations.floors[f.id].dinNeed || ''}</td>
+                                            <td key={f.id} className="border border-black p-1 text-center">{ioCalculations.floors[f.id].dinNeed || ''}</td>
                                         ))}
-                                        <td className="border border-black p-1.5 text-center font-bold">{ioCalculations.total.dinNeed || ''}</td>
-                                        <td colSpan={2} className="border border-black p-1.5 text-center">-</td>
+                                        <td className="border border-black p-1 text-center font-bold">{ioCalculations.total.dinNeed || ''}</td>
+                                        <td colSpan={2} className="border border-black p-1 text-center">-</td>
                                     </tr>
                                     <tr>
-                                        <td className="border border-black p-1.5 text-center font-bold">3</td>
-                                        <td className="border border-black p-1.5 text-green-700">Số bộ DIN8s-8i ĐÃ BÁO (CS + Rèm)</td>
-                                        <td className="border border-black p-1.5 text-center">Bộ</td>
+                                        <td className="border border-black p-1 text-center font-bold">3</td>
+                                        <td className="border border-black p-1 text-green-700">Số bộ DIN8s-8i ĐÃ BÁO (CS + Rèm)</td>
+                                        <td className="border border-black p-1 text-center">Bộ</td>
                                         {bomMap.floors.map(f => (
-                                            <td key={f.id} className="border border-black p-1.5 text-center bg-blue-100 font-bold">{ioCalculations.floors[f.id].dinReported || ''}</td>
+                                            <td key={f.id} className="border border-black p-1 text-center bg-blue-100 font-bold">{ioCalculations.floors[f.id].dinReported || ''}</td>
                                         ))}
-                                        <td className="border border-black p-1.5 text-center font-bold bg-blue-100">{ioCalculations.total.dinReported || ''}</td>
-                                        <td colSpan={2} className="border border-black p-1.5 text-center">-</td>
+                                        <td className="border border-black p-1 text-center font-bold bg-blue-100">{ioCalculations.total.dinReported || ''}</td>
+                                        <td colSpan={2} className="border border-black p-1 text-center">-</td>
                                     </tr>
                                     <tr>
-                                        <td className="border border-black p-1.5 text-center font-bold">4</td>
-                                        <td className="border border-black p-1.5 font-bold uppercase">Số lượng CẦN BỔ SUNG (Thiếu)</td>
-                                        <td className="border border-black p-1.5 text-center">Bộ</td>
+                                        <td className="border border-black p-1 text-center font-bold">4</td>
+                                        <td className="border border-black p-1 font-bold uppercase">Số lượng CẦN BỔ SUNG (Thiếu)</td>
+                                        <td className="border border-black p-1 text-center">Bộ</td>
                                         {bomMap.floors.map(f => {
                                             const m = ioCalculations.floors[f.id].missing;
-                                            return <td key={f.id} className={`border border-black p-1.5 text-center font-bold bg-yellow-100 ${m > 0 ? 'text-red-600' : ''}`}>{m > 0 ? m : '-'}</td>
+                                            return <td key={f.id} className={`border border-black p-1 text-center font-bold bg-yellow-100 ${m > 0 ? 'text-red-600' : ''}`}>{m > 0 ? m : '-'}</td>
                                         })}
-                                        <td className={`border border-black p-1.5 text-center font-bold bg-yellow-100 ${ioCalculations.total.missing > 0 ? 'text-red-600' : ''}`}>{ioCalculations.total.missing > 0 ? ioCalculations.total.missing : '-'}</td>
-                                        <td colSpan={2} className="border border-black p-1.5 text-center text-xs italic text-gray-500">(Dòng 2 trừ Dòng 3)</td>
+                                        <td className={`border border-black p-1 text-center font-bold bg-yellow-100 ${ioCalculations.total.missing > 0 ? 'text-red-600' : ''}`}>{ioCalculations.total.missing > 0 ? ioCalculations.total.missing : '-'}</td>
+                                        <td colSpan={2} className="border border-black p-1 text-center text-xs italic text-gray-500">(Dòng 2 trừ Dòng 3)</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -552,13 +535,13 @@
                         <table className="w-full border-collapse border border-black mb-4 text-[13px] table-fixed">
                             <thead>
                                 <tr className="bg-[#fff2cc] font-bold text-center">
-                                    <td className="border border-black p-1.5 w-10">STT</td>
-                                    <td className="border border-black p-1.5 w-20">Hình ảnh</td>
-                                    <td className="border border-black p-1.5">Hạng mục / Mô tả / Hãng / Xuất xứ</td>
-                                    <td className="border border-black p-1.5 w-14">Đơn vị</td>
-                                    <td className="border border-black p-1.5 w-12">SL</td>
-                                    <td className="border border-black p-1.5 w-24">Đơn giá</td>
-                                    <td className="border border-black p-1.5 w-28">Thành tiền</td>
+                                    <td className="border border-black p-1 w-8">STT</td>
+                                    <td className="border border-black p-1 w-16">Hình ảnh</td>
+                                    <td className="border border-black p-1">Hạng mục / Mô tả / Hãng / Xuất xứ</td>
+                                    <td className="border border-black p-1 w-12">Đơn vị</td>
+                                    <td className="border border-black p-1 w-10">SL</td>
+                                    <td className="border border-black p-1 w-20">Đơn giá</td>
+                                    <td className="border border-black p-1 w-24">Thành tiền</td>
                                 </tr>
                             </thead>
                             <tbody>
@@ -572,15 +555,15 @@
                                         {floor.systems.map((system, sysIndex) => (
                                             <React.Fragment key={system.id}>
                                                 <tr className="font-bold bg-white">
-                                                    <td className="border border-black p-1.5 text-center text-sm">{sysIndex + 1}</td>
-                                                    <td colSpan={6} className="border border-black p-1.5 text-sm uppercase">{system.name}</td>
+                                                    <td className="border border-black p-1.5 text-center">{sysIndex + 1}</td>
+                                                    <td colSpan={6} className="border border-black p-1.5 uppercase">{system.name}</td>
                                                 </tr>
                                                 {system.items.map((item, itemIdx) => (
                                                     <tr key={item.id} className="group hover:bg-gray-50">
-                                                        <td className="border border-black p-1.5 text-center align-top relative font-bold">
+                                                        <td className="border border-black p-1 text-center align-top relative font-bold">
                                                             {sysIndex + 1}.{itemIdx + 1}
                                                             {!isPreview && (
-                                                                <button onClick={() => deleteItemFromDetail(floor.id, item.id)} className="absolute top-2 left-1 text-red-500 opacity-0 group-hover:opacity-100 bg-white rounded print:hidden shadow border">
+                                                                <button onClick={() => deleteItemFromDetail(floor.id, item.id)} className="absolute top-1 left-0.5 text-red-500 opacity-0 group-hover:opacity-100 bg-white rounded print:hidden shadow border">
                                                                     <Trash2 size={12} />
                                                                 </button>
                                                             )}
@@ -590,7 +573,7 @@
                                                                 setBomMap({ ...bomMap, items: bomMap.items.map(i => i.id === item.id ? { ...i, image: v } : i) });
                                                             }} isEditing={!isPreview} />
                                                         </td>
-                                                        <td className="border border-black p-1.5 align-top break-words min-w-0">
+                                                        <td className="border border-black p-1 align-top break-words min-w-0">
                                                             <div className="font-bold mb-0.5">
                                                                 <EditableInput value={item.name} onChange={(v) => {
                                                                     setBomMap({ ...bomMap, items: bomMap.items.map(i => i.id === item.id ? { ...i, name: v } : i) });
@@ -598,20 +581,20 @@
                                                             </div>
                                                             <EditableInput value={item.desc} onChange={(v) => {
                                                                 setBomMap({ ...bomMap, items: bomMap.items.map(i => i.id === item.id ? { ...i, desc: v } : i) });
-                                                            }} placeholder="Mô tả kỹ thuật..." className="text-[12px] text-gray-600 leading-snug italic" isTextArea={true} isEditing={!isPreview} />
-                                                            <div className="mt-1 text-[12px] text-gray-700 font-semibold">
+                                                            }} placeholder="Mô tả kỹ thuật..." className="text-[12px] text-gray-600 leading-tight italic" isTextArea={true} isEditing={!isPreview} />
+                                                            <div className="mt-1 text-[11px] text-gray-800 uppercase">
                                                                 <EditableInput value={item.brand} onChange={(v) => {
                                                                     setBomMap({ ...bomMap, items: bomMap.items.map(i => i.id === item.id ? { ...i, brand: v } : i) });
                                                                 }} placeholder="Hãng / Xuất xứ" isEditing={!isPreview} />
                                                             </div>
                                                         </td>
-                                                        <td className="border border-black p-1.5 text-center align-middle">{item.unit}</td>
-                                                        <td className="border border-black p-1.5 text-center align-middle font-bold">
+                                                        <td className="border border-black p-1 text-center align-middle">{item.unit}</td>
+                                                        <td className="border border-black p-1 text-center align-middle font-bold">
                                                             {floor.id === 'common' ? item.qty : (
                                                                 <EditableInput value={item.qty} onChange={(v) => updateBOMQuantity(floor.id, item.id, v)} className="text-center font-bold" isEditing={!isPreview} />
                                                             )}
                                                         </td>
-                                                        <td className="border border-black p-1.5 text-center align-middle">
+                                                        <td className="border border-black p-1 text-center align-middle">
                                                             {isPreview ? (
                                                                 <div className="text-center">{formatMoney(item.price)}</div>
                                                             ) : (
@@ -620,7 +603,7 @@
                                                                 }} className="text-center" isEditing={true} />
                                                             )}
                                                         </td>
-                                                        <td className="border border-black p-1.5 text-right align-middle font-bold">
+                                                        <td className="border border-black p-1 text-right align-middle font-bold">
                                                             {formatMoney(item.total)}
                                                         </td>
                                                     </tr>
@@ -632,38 +615,37 @@
                             </tbody>
                         </table>
 
-                        {/* Option Âm Thanh Tách Biệt */}
                         {includeAudio && (
-                            <div className="mt-6 page-break-before">
+                            <div className="mt-4 page-break-before">
                                 <div className="text-red-600 font-bold text-sm uppercase mb-1">HẠNG MỤC NÂNG CAO:<br />OPTION (ÂM THANH ĐA VÙNG)</div>
                                 <table className="w-full border-collapse border border-black mb-4 text-[13px] table-fixed">
                                     <tbody>
                                         {audioData.map((item, idx) => (
                                             <tr key={item.id}>
-                                                <td className="border border-black p-1.5 text-center align-top font-bold text-red-600 w-10">{idx + 1}</td>
-                                                <td className="border border-black p-1 align-top w-20">
+                                                <td className="border border-black p-1 text-center align-top font-bold text-red-600 w-8">{idx + 1}</td>
+                                                <td className="border border-black p-1 align-top w-16">
                                                     <ImageUpload value={item.image} onChange={(v) => {
                                                         const newD = [...audioData]; newD[idx].image = v; setAudioData(newD);
                                                     }} isEditing={!isPreview} />
                                                 </td>
-                                                <td className="border border-black p-1.5 align-top break-words min-w-0">
+                                                <td className="border border-black p-1 align-top break-words min-w-0">
                                                     <div className="font-bold mb-0.5">
                                                         <EditableInput value={item.name} onChange={v => { const newD = [...audioData]; newD[idx].name = v; setAudioData(newD); }} isEditing={!isPreview} />
                                                     </div>
-                                                    <EditableInput value={item.desc} onChange={v => { const newD = [...audioData]; newD[idx].desc = v; setAudioData(newD); }} className="text-[12px] leading-snug" isTextArea={true} isEditing={!isPreview} />
+                                                    <EditableInput value={item.desc} onChange={v => { const newD = [...audioData]; newD[idx].desc = v; setAudioData(newD); }} className="text-[12px] leading-tight" isTextArea={true} isEditing={!isPreview} />
                                                 </td>
-                                                <td className="border border-black p-1.5 text-center align-middle w-14">{item.unit}</td>
-                                                <td className="border border-black p-1.5 text-center align-middle font-bold w-12">
+                                                <td className="border border-black p-1 text-center align-middle w-12">{item.unit}</td>
+                                                <td className="border border-black p-1 text-center align-middle font-bold w-10">
                                                     <EditableInput value={item.qty} onChange={v => { const newD = [...audioData]; newD[idx].qty = v; setAudioData(newD); }} className="text-center font-bold" isEditing={!isPreview} />
                                                 </td>
-                                                <td className="border border-black p-1.5 text-center align-middle w-24">
+                                                <td className="border border-black p-1 text-center align-middle w-20">
                                                     {isPreview ? (
                                                         <div className="text-center">{formatMoney(item.price)}</div>
                                                     ) : (
                                                         <EditableInput value={item.price} onChange={v => { const newD = [...audioData]; newD[idx].price = v; setAudioData(newD); }} className="text-center" isEditing={true} />
                                                     )}
                                                 </td>
-                                                <td className="border border-black p-1.5 text-right align-middle font-bold w-28">{formatMoney((parseFloat(item.qty) || 0) * (parseFloat(item.price) || 0))}</td>
+                                                <td className="border border-black p-1 text-right align-middle font-bold w-24">{formatMoney((parseFloat(item.qty) || 0) * (parseFloat(item.price) || 0))}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -681,44 +663,42 @@
 
                 return (
                     <div className="w-full">
-                        <h2 className="text-xl font-bold text-center mb-4 mt-4 uppercase">BẢNG DỰ TOÁN TỔNG HỢP PHƯƠNG ÁN {headerInfo.plan}</h2>
-                        <table className="w-full border-collapse border border-black mb-4 text-[13px]">
+                        <h2 className="text-xl font-bold text-center mb-4 mt-2 uppercase">BẢNG DỰ TOÁN TỔNG HỢP PHƯƠNG ÁN {headerInfo.plan}</h2>
+                        <table className="w-full border-collapse border border-black mb-4 text-[13px] table-fixed">
                             <thead>
                                 <tr className="bg-[#a9d08e] font-bold text-center">
-                                    <td className="border border-black p-2 w-12">STT</td>
-                                    <td className="border border-black p-2">HẠNG MỤC ĐIỀU KHIỂN</td>
-                                    <td className="border border-black p-2 w-36">Giá trị ({currency})</td>
+                                    <td className="border border-black p-1.5 w-12">STT</td>
+                                    <td className="border border-black p-1.5">HẠNG MỤC ĐIỀU KHIỂN</td>
+                                    <td className="border border-black p-1.5 w-32">Giá trị ({currency})</td>
                                 </tr>
                             </thead>
                             <tbody>
-                                {/* Lặp qua các tầng (Chiếu sáng, rèm...) */}
                                 {detailedData.map((floor) => {
                                     if (floor.id === 'common') return null;
                                     let floorTotal = floor.systems.reduce((sum, sys) => sum + sys.items.reduce((s, i) => s + i.total, 0), 0);
                                     grandTotal += floorTotal;
                                     
-                                    // Ẩn nếu tầng này = 0đ (Không có thiết bị)
                                     if (floorTotal === 0) return null;
 
                                     return (
                                         <React.Fragment key={floor.id}>
                                             <tr className="font-bold bg-gray-50">
-                                                <td className="border border-black p-1.5 text-center"></td>
-                                                <td className="border border-black p-1.5 uppercase">{floor.name}</td>
-                                                <td className="border border-black p-1.5 text-center">{formatMoney(floorTotal)}</td>
+                                                <td className="border border-black p-1 text-center"></td>
+                                                <td className="border border-black p-1 uppercase">{floor.name}</td>
+                                                <td className="border border-black p-1 text-right pr-2">{formatMoney(floorTotal)}</td>
                                             </tr>
                                             {floor.systems.map((sys) => {
                                                 let sysTotal = sys.items.reduce((s, i) => s + i.total, 0);
                                                 return (
                                                     <React.Fragment key={sys.id}>
                                                         <tr className="font-bold">
-                                                            <td className="border border-black p-1.5 text-center">{smartHomeRowIdx++}</td>
-                                                            <td className="border border-black p-1.5 pl-6">{sys.name}</td>
-                                                            <td className="border border-black p-1.5 text-center">{formatMoney(sysTotal)}</td>
+                                                            <td className="border border-black p-1 text-center">{smartHomeRowIdx++}</td>
+                                                            <td className="border border-black p-1 pl-6">{sys.name}</td>
+                                                            <td className="border border-black p-1 text-right pr-2">{formatMoney(sysTotal)}</td>
                                                         </tr>
                                                         <tr>
-                                                            <td className="border border-black p-1.5 border-t-0 border-r-0"></td>
-                                                            <td className="border border-black p-1 text-[12px] italic border-t-0 border-l-0 text-gray-600 leading-snug" colSpan={2}>
+                                                            <td className="border border-black p-1 border-t-0 border-r-0"></td>
+                                                            <td className="border border-black p-1 text-[12px] italic border-t-0 border-l-0 text-gray-600 leading-tight" colSpan={2}>
                                                                 <EditableInput value={sys.note} onChange={() => { }} placeholder="Ghi chú hệ thống..." isTextArea={true} isEditing={!isPreview} />
                                                             </td>
                                                         </tr>
@@ -729,7 +709,6 @@
                                     );
                                 })}
 
-                                {/* Lặp qua hệ thống chung (Gộp gọn thành 1 dòng / hệ thống) */}
                                 {detailedData.find(f => f.id === 'common')?.systems.map((sys) => {
                                     let sysTotal = sys.items.reduce((s, i) => s + i.total, 0);
                                     grandTotal += sysTotal;
@@ -737,13 +716,13 @@
                                     return (
                                         <React.Fragment key={sys.id}>
                                             <tr className="font-bold">
-                                                <td className="border border-black p-1.5 text-center">{smartHomeRowIdx++}</td>
-                                                <td className="border border-black p-1.5 uppercase">{sys.name}</td>
-                                                <td className="border border-black p-1.5 text-center">{formatMoney(sysTotal)}</td>
+                                                <td className="border border-black p-1 text-center">{smartHomeRowIdx++}</td>
+                                                <td className="border border-black p-1 uppercase">{sys.name}</td>
+                                                <td className="border border-black p-1 text-right pr-2">{formatMoney(sysTotal)}</td>
                                             </tr>
                                             <tr>
-                                                <td className="border border-black p-1.5 border-t-0 border-r-0"></td>
-                                                <td className="border border-black p-1 text-[12px] italic text-gray-700 leading-snug border-t-0 border-l-0" colSpan={2}>
+                                                <td className="border border-black p-1 border-t-0 border-r-0"></td>
+                                                <td className="border border-black p-1 text-[12px] italic text-gray-700 leading-tight border-t-0 border-l-0" colSpan={2}>
                                                     <EditableInput value={sys.note || defaultNote} onChange={() => { }} placeholder="Ghi chú hệ thống chung..." isTextArea={true} isEditing={!isPreview} />
                                                 </td>
                                             </tr>
@@ -751,52 +730,49 @@
                                     );
                                 })}
 
-                                {/* Chi phí Triển khai & Lập trình */}
                                 <tr className="font-bold">
-                                    <td className="border border-black p-1.5 text-center">{smartHomeRowIdx++}</td>
-                                    <td className="border border-black p-1.5 uppercase">CHI PHÍ TRIỂN KHAI GIÁM SÁT, LẮP ĐẶT</td>
-                                    <td className="border border-black p-1.5 text-center">{formatMoney(implementationCosts.install)}</td>
+                                    <td className="border border-black p-1 text-center">{smartHomeRowIdx++}</td>
+                                    <td className="border border-black p-1 uppercase">CHI PHÍ TRIỂN KHAI GIÁM SÁT, LẮP ĐẶT</td>
+                                    <td className="border border-black p-1 text-right pr-2">{formatMoney(implementationCosts.install)}</td>
                                 </tr>
                                 <tr>
-                                    <td className="border border-black p-1.5 border-t-0 border-r-0"></td>
-                                    <td className="border border-black p-1 text-[12px] border-t-0 border-l-0 text-gray-700 leading-snug" colSpan={2}>
+                                    <td className="border border-black p-1 border-t-0 border-r-0"></td>
+                                    <td className="border border-black p-1 text-[12px] border-t-0 border-l-0 text-gray-700 leading-tight" colSpan={2}>
                                         <EditableInput value={"- Triển khai bản vẽ nguyên lý điện thông minh, cập nhật bản vẽ và hướng dẫn thi công định kì\n- Đấu nối tủ điện, lắp đặt các thiết bị điều khiển.\n- Đấu nối công tắc, cảm biến.\n- Kết nối điều hòa.\n- Chạy thử, hiệu chỉnh, thay đổi, bàn giao, bảo hành."} onChange={() => { }} isTextArea={true} isEditing={!isPreview} />
                                     </td>
                                 </tr>
 
-                                <tr className="font-bold">
-                                    <td className="border border-black p-1.5 text-center">{smartHomeRowIdx++}</td>
-                                    <td className="border border-black p-1.5 uppercase">CHI PHÍ THIẾT KẾ, LẬP TRÌNH, SETUP HỆ THỐNG</td>
-                                    <td className="border border-black p-1.5 text-center">{formatMoney(implementationCosts.design)}</td>
+                                <tr className="font-bold border-b border-black">
+                                    <td className="border border-black p-1 text-center">{smartHomeRowIdx++}</td>
+                                    <td className="border border-black p-1 uppercase">CHI PHÍ THIẾT KẾ, LẬP TRÌNH, SETUP HỆ THỐNG</td>
+                                    <td className="border border-black p-1 text-right pr-2">{formatMoney(implementationCosts.design)}</td>
                                 </tr>
                                 <tr>
-                                    <td className="border border-black p-1.5 border-t-0 border-r-0"></td>
-                                    <td className="border border-black p-1 text-[12px] border-t-0 border-l-0 text-gray-700 leading-snug" colSpan={2}>
+                                    <td className="border border-black p-1 border-t-0 border-r-0"></td>
+                                    <td className="border border-black p-1 text-[12px] border-t-0 border-l-0 text-gray-700 leading-tight" colSpan={2}>
                                         <EditableInput value={"- Lập trình hệ thống Smart home. Điều khiển toàn bộ các hạng mục: chiếu sáng, rèm, điều hòa, an ninh, cổng....\n- Lập trình, thiết kế giao diện trên Smart phone\n- Lập trình, thiết kế giao diện trên màn hình cảm ứng"} onChange={() => { }} isTextArea={true} isEditing={!isPreview} />
                                     </td>
                                 </tr>
 
-                                {/* Chốt Tổng Tiền - Gộp Cột */}
                                 <tr className="bg-[#e2efda] font-bold">
-                                    <td className="border border-black p-2 text-center tracking-wide" colSpan={2}>TỔNG GIÁ TRỊ SMARTHOME</td>
-                                    <td className="border border-black p-2 text-center font-bold">{formatMoney(grandTotal)}</td>
+                                    <td className="border border-black p-1.5 text-center tracking-wide" colSpan={2}>TỔNG GIÁ TRỊ SMARTHOME</td>
+                                    <td className="border border-black p-1.5 text-right pr-2">{formatMoney(grandTotal)}</td>
                                 </tr>
                                 <tr className="bg-[#e2efda] font-bold">
-                                    <td className="border border-black p-2 text-center tracking-wide" colSpan={2}>THUẾ VAT 8%</td>
-                                    <td className="border border-black p-2 text-center">{formatMoney(grandTotal * 0.08)}</td>
+                                    <td className="border border-black p-1.5 text-center tracking-wide" colSpan={2}>THUẾ VAT 8%</td>
+                                    <td className="border border-black p-1.5 text-right pr-2">{formatMoney(grandTotal * 0.08)}</td>
                                 </tr>
                                 <tr className="bg-[#e2efda] font-bold">
-                                    <td className="border border-black border-b border-black p-2 text-center tracking-wide" colSpan={2}>TỔNG GIÁ TRỊ SMARTHOME SAU THUẾ</td>
-                                    <td className="border border-black border-b border-black p-2 text-center font-bold">{formatMoney(grandTotal * 1.08)}</td>
+                                    <td className="border border-black border-b border-black p-1.5 text-center tracking-wide" colSpan={2}>TỔNG GIÁ TRỊ SMARTHOME SAU THUẾ</td>
+                                    <td className="border border-black border-b border-black p-1.5 text-right pr-2">{formatMoney(grandTotal * 1.08)}</td>
                                 </tr>
                             </tbody>
                         </table>
 
-                        {/* Option Âm Thanh Tách Biệt */}
                         {includeAudio && (
                             <div className="mt-4 page-break-before">
                                 <div className="text-red-600 font-bold text-sm uppercase mb-1">HẠNG MỤC NÂNG CAO:<br />OPTION (ÂM THANH ĐA VÙNG)</div>
-                                <table className="w-full border-collapse border border-black mb-4 text-[13px]">
+                                <table className="w-full border-collapse border border-black mb-4 text-[13px] table-fixed">
                                     <tbody>
                                         {audioData.map((item, idx) => {
                                             let itemTotal = (parseFloat(item.qty) || 0) * (parseFloat(item.price) || 0);
@@ -804,49 +780,49 @@
                                             return (
                                                 <React.Fragment key={item.id}>
                                                     <tr>
-                                                        <td className="border border-black p-1.5 text-center w-12 text-red-600 font-bold">{idx + 1}</td>
-                                                        <td className="border border-black p-1.5 font-bold">
+                                                        <td className="border border-black p-1 text-center w-12 text-red-600 font-bold">{idx + 1}</td>
+                                                        <td className="border border-black p-1 font-bold">
                                                             <EditableInput value={item.name} onChange={v => { const newD = [...audioData]; newD[idx].name = v; setAudioData(newD); }} isEditing={!isPreview} />
                                                         </td>
-                                                        <td className="border border-black p-1.5 text-center w-36 font-bold">
+                                                        <td className="border border-black p-1 text-right pr-2 w-32 font-bold">
                                                             {formatMoney(itemTotal)}
                                                         </td>
                                                     </tr>
                                                     <tr>
-                                                        <td className="border border-black p-1.5 border-t-0 border-r-0"></td>
-                                                        <td className="border border-black p-1 text-[12px] leading-snug border-t-0 border-l-0 text-gray-700" colSpan={2}>
+                                                        <td className="border border-black p-1 border-t-0 border-r-0"></td>
+                                                        <td className="border border-black p-1 text-[12px] leading-tight border-t-0 border-l-0 text-gray-700" colSpan={2}>
                                                             <EditableInput value={item.desc} onChange={v => { const newD = [...audioData]; newD[idx].desc = v; setAudioData(newD); }} isTextArea={true} isEditing={!isPreview} />
                                                         </td>
                                                     </tr>
                                                 </React.Fragment>
                                             )
                                         })}
-                                        <tr className="bg-[#e2efda] font-bold">
-                                            <td className="border border-black p-2 text-center tracking-wide" colSpan={2}>TỔNG GIÁ TRỊ PHẦN ÂM THANH</td>
-                                            <td className="border border-black p-2 text-center font-bold">{formatMoney(audioTotal)}</td>
+                                        <tr className="bg-[#e2efda] font-bold border-t border-black">
+                                            <td className="border border-black p-1.5 text-center tracking-wide" colSpan={2}>TỔNG GIÁ TRỊ PHẦN ÂM THANH</td>
+                                            <td className="border border-black p-1.5 text-right pr-2">{formatMoney(audioTotal)}</td>
                                         </tr>
                                         <tr className="bg-[#e2efda] font-bold">
-                                            <td className="border border-black p-2 text-center tracking-wide" colSpan={2}>THUẾ VAT 8%</td>
-                                            <td className="border border-black p-2 text-center">{formatMoney(audioTotal * 0.08)}</td>
+                                            <td className="border border-black p-1.5 text-center tracking-wide" colSpan={2}>THUẾ VAT 8%</td>
+                                            <td className="border border-black p-1.5 text-right pr-2">{formatMoney(audioTotal * 0.08)}</td>
                                         </tr>
                                         <tr className="bg-[#e2efda] font-bold">
-                                            <td className="border border-black border-b border-black p-2 text-center tracking-wide" colSpan={2}>TỔNG GIÁ TRỊ ÂM THANH SAU THUẾ</td>
-                                            <td className="border border-black border-b border-black p-2 text-center font-bold">{formatMoney(audioTotal * 1.08)}</td>
+                                            <td className="border border-black border-b border-black p-1.5 text-center tracking-wide" colSpan={2}>TỔNG GIÁ TRỊ ÂM THANH SAU THUẾ</td>
+                                            <td className="border border-black border-b border-black p-1.5 text-right pr-2">{formatMoney(audioTotal * 1.08)}</td>
                                         </tr>
                                     </tbody>
                                 </table>
                             </div>
                         )}
 
-                        <div className="mt-6 text-[13px] page-break-before">
+                        <div className="mt-4 text-[13px] page-break-before">
                             <h3 className="font-bold text-red-600 underline mb-2 uppercase">Điều kiện thương mại và phạm vi cung cấp:</h3>
-                            <p className="font-bold underline mb-2">Giá đã bao gồm thuế VAT</p>
-                            <table className="w-full mb-3">
+                            <p className="font-bold underline mb-1">Giá đã bao gồm thuế VAT</p>
+                            <table className="w-full mb-2">
                                 <tbody>
                                     {commercialTerms.slice(0, 4).map((term, idx) => (
                                         <tr key={idx}>
-                                            <td className="w-48 py-1 align-top font-semibold">{term.label}</td>
-                                            <td className="py-1">
+                                            <td className="w-40 py-0.5 align-top font-semibold">{term.label}</td>
+                                            <td className="py-0.5">
                                                 <EditableInput value={term.value} onChange={(v) => {
                                                     const newTerms = [...commercialTerms]; newTerms[idx].value = v; setCommercialTerms(newTerms);
                                                 }} isTextArea={true} isEditing={!isPreview} />
@@ -856,14 +832,14 @@
                                 </tbody>
                             </table>
 
-                            <p className="font-bold underline mt-3 mb-1">Phạm vi cung cấp:</p>
+                            <p className="font-bold underline mt-2 mb-1">Phạm vi cung cấp:</p>
                             <div className="pl-4">
                                 <EditableInput value={commercialTerms[4].value} onChange={(v) => {
                                     const newTerms = [...commercialTerms]; newTerms[4].value = v; setCommercialTerms(newTerms);
                                 }} isTextArea={true} isEditing={!isPreview} />
                             </div>
 
-                            <p className="font-bold underline mt-3 mb-1">Phạm vi không cung cấp (chưa bao gồm):</p>
+                            <p className="font-bold underline mt-2 mb-1">Phạm vi không cung cấp (chưa bao gồm):</p>
                             <div className="pl-4">
                                 <EditableInput value={commercialTerms[5].value} onChange={(v) => {
                                     const newTerms = [...commercialTerms]; newTerms[5].value = v; setCommercialTerms(newTerms);
@@ -875,88 +851,76 @@
             };
 
             return (
-                <div>
-                    {/* Thanh Điều Hướng (Toolbar) */}
-                    <div className={`preview-toolbar mx-auto bg-gray-900 text-white p-2.5 flex justify-between items-center mb-4 sticky top-0 z-50 transition-all duration-300 shadow-xl ${isPreview ? '' : 'max-w-6xl rounded-b-lg'}`}>
+                <div className={`min-h-screen bg-gray-100 font-sans ${isPreview ? 'bg-[#525659] pt-[70px] pb-[40px]' : 'p-4'}`}>
+                    
+                    {/* Toolbar */}
+                    <div className={`preview-toolbar mx-auto bg-gray-900 text-white p-2 flex justify-between items-center shadow-xl transition-all duration-300 ${isPreview ? 'fixed top-0 left-0 w-full z-[100] print:hidden rounded-none' : 'max-w-6xl rounded-b-lg mb-4'}`}>
                         {isPreview ? (
-                            <div className="w-full flex justify-between items-center px-2">
+                            <div className="w-full flex justify-between items-center px-4">
                                 <div className="flex gap-4 items-center">
-                                    <span className="font-bold text-yellow-400 uppercase tracking-widest text-sm">Xem trước bản in</span>
+                                    <span className="font-bold text-yellow-400 uppercase tracking-widest text-sm">XEM TRƯỚC BẢN IN</span>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    <span className="text-gray-400 text-xs uppercase font-bold mr-1">Khổ giấy:</span>
-                                    <button onClick={() => setPrintOrientation('portrait')} className={`px-3 py-1.5 rounded font-bold text-sm transition-colors ${printOrientation === 'portrait' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-500'}`}>
-                                        Dọc
+                                    <span className="text-gray-400 text-[11px] uppercase font-bold mr-1">Khổ giấy:</span>
+                                    <button onClick={() => setPrintOrientation('portrait')} className={`px-3 py-1.5 rounded font-bold text-xs transition-colors ${printOrientation === 'portrait' ? 'bg-gray-600 text-white' : 'bg-transparent border border-gray-600 text-gray-400 hover:bg-gray-700'}`}>Dọc</button>
+                                    <button onClick={() => setPrintOrientation('landscape')} className={`px-3 py-1.5 rounded font-bold text-xs transition-colors ${printOrientation === 'landscape' ? 'bg-gray-600 text-white' : 'bg-transparent border border-gray-600 text-gray-400 hover:bg-gray-700'}`}>Ngang</button>
+                                    <div className="w-px h-5 bg-gray-700 mx-2"></div>
+                                    <button onClick={() => window.print()} className="flex items-center px-4 py-1.5 bg-gray-700 hover:bg-gray-600 border border-gray-500 rounded font-bold text-sm transition-colors text-white shadow">
+                                        <Printer size={14} className="mr-2" /> XUẤT PDF / IN
                                     </button>
-                                    <button onClick={() => setPrintOrientation('landscape')} className={`px-3 py-1.5 rounded font-bold text-sm transition-colors ${printOrientation === 'landscape' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-500'}`}>
-                                        Ngang
-                                    </button>
-                                    
-                                    <div className="w-px h-6 bg-gray-600 mx-2"></div>
-                                    
-                                    <button onClick={() => window.print()} className="flex items-center px-4 py-2 bg-green-500 hover:bg-green-600 rounded font-bold text-sm transition-colors text-white shadow-lg">
-                                        <Printer size={16} className="mr-2" /> XUẤT PDF / IN
-                                    </button>
-                                    
-                                    <button onClick={() => setIsPreview(false)} className="flex items-center px-4 py-2 bg-red-500 hover:bg-red-600 rounded font-bold text-sm transition-colors text-white ml-2">
-                                        <X size={16} className="mr-2" /> Trở lại
+                                    <button onClick={() => setIsPreview(false)} className="flex items-center px-4 py-1.5 bg-red-900/50 hover:bg-red-800 border border-red-800 rounded font-bold text-sm transition-colors text-white ml-2">
+                                        <X size={14} className="mr-2" /> Trở lại
                                     </button>
                                 </div>
                             </div>
                         ) : (
                             <>
                                 <div className="flex gap-1.5">
-                                    <button onClick={() => setActiveTab('bom')} className={`px-4 py-1.5 rounded text-sm font-bold transition-colors ${activeTab === 'bom' ? 'bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'}`}>BOM Kỹ thuật</button>
-                                    <button onClick={() => setActiveTab('summary')} className={`px-4 py-1.5 rounded text-sm font-bold transition-colors ${activeTab === 'summary' ? 'bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'}`}>Bảng Tổng Hợp</button>
-                                    <button onClick={() => setActiveTab('detailed')} className={`px-4 py-1.5 rounded text-sm font-bold transition-colors ${activeTab === 'detailed' ? 'bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'}`}>Bảng Chi Tiết</button>
+                                    <button onClick={() => setActiveTab('bom')} className={`px-4 py-1.5 rounded text-sm font-bold transition-colors ${activeTab === 'bom' ? 'bg-blue-600' : 'bg-gray-800 hover:bg-gray-700'}`}>BOM Kỹ thuật</button>
+                                    <button onClick={() => setActiveTab('summary')} className={`px-4 py-1.5 rounded text-sm font-bold transition-colors ${activeTab === 'summary' ? 'bg-blue-600' : 'bg-gray-800 hover:bg-gray-700'}`}>Bảng Tổng Hợp</button>
+                                    <button onClick={() => setActiveTab('detailed')} className={`px-4 py-1.5 rounded text-sm font-bold transition-colors ${activeTab === 'detailed' ? 'bg-blue-600' : 'bg-gray-800 hover:bg-gray-700'}`}>Bảng Chi Tiết</button>
                                 </div>
-                                <div className="flex items-center gap-2.5">
+                                <div className="flex items-center gap-2">
                                     <label className="flex items-center gap-1.5 cursor-pointer bg-gray-800 px-2 py-1 rounded hover:bg-gray-700 transition-colors">
-                                        <input type="checkbox" checked={includeAudio} onChange={(e) => setIncludeAudio(e.target.checked)} className="form-checkbox h-3.5 w-3.5 text-blue-500 rounded" />
-                                        <span className="text-xs font-semibold text-green-400">+ Âm thanh</span>
+                                        <input type="checkbox" checked={includeAudio} onChange={(e) => setIncludeAudio(e.target.checked)} className="h-3 w-3 text-blue-500 rounded" />
+                                        <span className="text-[11px] font-semibold text-green-400">+ Âm thanh</span>
                                     </label>
-                                    <div className="flex items-center gap-1.5 bg-gray-800 px-2 py-1 rounded transition-colors">
-                                        <select value={currency} onChange={e => setCurrency(e.target.value)} className="bg-transparent border-none text-white focus:ring-0 cursor-pointer outline-none font-bold text-xs">
+                                    <div className="flex items-center gap-1 bg-gray-800 px-2 py-1 rounded transition-colors">
+                                        <select value={currency} onChange={e => setCurrency(e.target.value)} className="bg-transparent border-none text-white focus:ring-0 cursor-pointer outline-none font-bold text-[11px]">
                                             <option value="USD" className="text-black">USD</option>
                                             <option value="VND" className="text-black">VNĐ</option>
                                         </select>
                                         {currency === 'VND' && (
-                                            <input type="number" value={exchangeRate} onChange={e => setExchangeRate(Number(e.target.value))} className="w-20 bg-gray-700 text-white px-1.5 py-0.5 rounded text-xs text-center border-none focus:ring-1 focus:ring-blue-500 outline-none" placeholder="Tỷ giá" />
+                                            <input type="number" value={exchangeRate} onChange={e => setExchangeRate(Number(e.target.value))} className="w-16 bg-gray-700 text-white px-1 py-0.5 rounded text-[11px] text-center border-none focus:ring-1 focus:ring-blue-500 outline-none" placeholder="Tỷ giá" />
                                         )}
                                     </div>
-                                    <div className="h-5 w-px bg-gray-600 mx-0.5"></div>
-                                    <button onClick={handleExportData} className="flex items-center px-2 py-1 bg-indigo-600 hover:bg-indigo-700 rounded text-xs font-bold transition-colors">
-                                        <Download size={14} className="mr-1" /> LƯU FILE
+                                    <div className="h-4 w-px bg-gray-700 mx-1"></div>
+                                    <button onClick={handleExportData} className="flex items-center px-2 py-1 bg-indigo-900/50 hover:bg-indigo-800 border border-indigo-800 rounded text-[11px] font-bold transition-colors">
+                                        <Download size={12} className="mr-1" /> LƯU FILE
                                     </button>
-                                    <label className="flex items-center px-2 py-1 bg-orange-600 hover:bg-orange-700 rounded text-xs font-bold cursor-pointer transition-colors">
-                                        <Upload size={14} className="mr-1" /> MỞ FILE
+                                    <label className="flex items-center px-2 py-1 bg-orange-900/50 hover:bg-orange-800 border border-orange-800 rounded text-[11px] font-bold cursor-pointer transition-colors">
+                                        <Upload size={12} className="mr-1" /> MỞ FILE
                                         <input type="file" accept=".json" onChange={handleImportData} className="hidden" />
                                     </label>
-                                    <button onClick={() => setIsPreview(true)} className="flex items-center px-3 py-1.5 rounded font-bold bg-white text-gray-900 hover:bg-gray-200 transition-colors text-sm ml-1 shadow">
-                                        <Printer size={14} className="mr-1.5" /> Xem trước & In
+                                    <button onClick={() => setIsPreview(true)} className="flex items-center px-3 py-1 bg-gray-200 text-gray-900 hover:bg-white rounded font-bold text-[12px] transition-colors ml-1 shadow">
+                                        <Printer size={12} className="mr-1.5" /> Xem trước & In
                                     </button>
                                 </div>
                             </>
                         )}
                     </div>
 
-                    {/* Vùng Khổ Giấy */}
-                    <div 
-                        className={`preview-container mx-auto transition-all duration-500 ${!isPreview ? 'max-w-6xl rounded-lg shadow-lg p-4 sm:p-8 bg-white mb-10' : 'is-preview-mode'}`}
-                        style={isPreview ? {
-                            '--preview-width': printOrientation === 'landscape' ? '297mm' : '210mm',
-                            '--preview-height': printOrientation === 'landscape' ? '210mm' : '297mm',
-                        } : {}}
-                    >
-                        {/* Header Thông tin công ty & Dự án */}
+                    {/* Vùng Giấy (Container) */}
+                    <div className={`preview-container mx-auto transition-all duration-300 bg-white ${isPreview ? 'is-preview-mode' : 'max-w-6xl rounded-lg shadow-lg p-4 sm:p-6 mb-10'}`}>
+                        
                         {(activeTab !== 'bom' || isPreview) && (
                             <>
-                                <div className="flex justify-between items-start mb-4 border-b pb-2">
-                                    <div className="w-48 h-12">
+                                <div className="flex justify-between items-start mb-2 pb-1">
+                                    <div className="w-40 h-10">
                                         <ImageUpload value={headerInfo.logo} onChange={(v) => setHeaderInfo({ ...headerInfo, logo: v })} isEditing={!isPreview} />
                                     </div>
-                                    <div className="text-right text-[12px] leading-snug">
-                                        <div className="font-bold text-[#233f8d] text-[13px] uppercase">
+                                    <div className="text-right text-[11px] leading-snug">
+                                        <div className="font-bold text-[#233f8d] text-[12px] uppercase">
                                             <EditableInput value="ASEL VIỆT NAM" onChange={() => { }} isEditing={!isPreview} />
                                         </div>
                                         <div className="font-bold text-gray-800"><EditableInput value="BMS & SMART HOME CENTER" onChange={() => { }} isEditing={!isPreview} /></div>
@@ -965,21 +929,21 @@
                                     </div>
                                 </div>
 
-                                <div className="flex justify-between text-[13px] mb-4">
+                                <div className="flex justify-between text-[12px] mb-3">
                                     <div className="w-1/2 pr-4">
-                                        <div className="flex mb-0.5"><strong className="w-24">Dự án:</strong> <EditableInput value={headerInfo.projectName} onChange={(v) => setHeaderInfo({ ...headerInfo, projectName: v })} isEditing={!isPreview} /></div>
-                                        <div className="flex mb-0.5"><strong className="w-24">Quy mô:</strong> <EditableInput value="Biệt thự gia đình" onChange={() => { }} isEditing={!isPreview} /></div>
-                                        <div className="flex mb-0.5"><strong className="w-24">Địa chỉ:</strong> <EditableInput value={headerInfo.location} onChange={(v) => setHeaderInfo({ ...headerInfo, location: v })} isEditing={!isPreview} /></div>
-                                        <div className="flex mb-0.5"><strong className="w-24">Phương án:</strong> <EditableInput value={headerInfo.plan} onChange={(v) => setHeaderInfo({ ...headerInfo, plan: v })} isEditing={!isPreview} /></div>
+                                        <div className="flex mb-0.5"><strong className="w-20">Dự án:</strong> <EditableInput value={headerInfo.projectName} onChange={(v) => setHeaderInfo({ ...headerInfo, projectName: v })} isEditing={!isPreview} /></div>
+                                        <div className="flex mb-0.5"><strong className="w-20">Quy mô:</strong> <EditableInput value="Biệt thự gia đình" onChange={() => { }} isEditing={!isPreview} /></div>
+                                        <div className="flex mb-0.5"><strong className="w-20">Địa chỉ:</strong> <EditableInput value={headerInfo.location} onChange={(v) => setHeaderInfo({ ...headerInfo, location: v })} isEditing={!isPreview} /></div>
+                                        <div className="flex mb-0.5"><strong className="w-20">Phương án:</strong> <EditableInput value={headerInfo.plan} onChange={(v) => setHeaderInfo({ ...headerInfo, plan: v })} isEditing={!isPreview} /></div>
                                     </div>
                                     <div className="w-1/2 pl-4">
-                                        <div className="flex mb-0.5"><strong className="w-28">Tư vấn dự án:</strong> <EditableInput value={headerInfo.consultant} onChange={(v) => setHeaderInfo({ ...headerInfo, consultant: v })} isEditing={!isPreview} /></div>
-                                        <div className="flex mb-0.5"><strong className="w-28">Số điện thoại:</strong> <EditableInput value={headerInfo.phone} onChange={(v) => setHeaderInfo({ ...headerInfo, phone: v })} isEditing={!isPreview} /></div>
-                                        <div className="flex mb-0.5"><strong className="w-28">Email:</strong> <EditableInput value={headerInfo.email} onChange={(v) => setHeaderInfo({ ...headerInfo, email: v })} isEditing={!isPreview} /></div>
-                                        <div className="flex mb-0.5"><strong className="w-28">Ngày báo giá:</strong> <EditableInput value={headerInfo.date} onChange={(v) => setHeaderInfo({ ...headerInfo, date: v })} isEditing={!isPreview} /></div>
+                                        <div className="flex mb-0.5"><strong className="w-24">Tư vấn dự án:</strong> <EditableInput value={headerInfo.consultant} onChange={(v) => setHeaderInfo({ ...headerInfo, consultant: v })} isEditing={!isPreview} /></div>
+                                        <div className="flex mb-0.5"><strong className="w-24">Số điện thoại:</strong> <EditableInput value={headerInfo.phone} onChange={(v) => setHeaderInfo({ ...headerInfo, phone: v })} isEditing={!isPreview} /></div>
+                                        <div className="flex mb-0.5"><strong className="w-24">Email:</strong> <EditableInput value={headerInfo.email} onChange={(v) => setHeaderInfo({ ...headerInfo, email: v })} isEditing={!isPreview} /></div>
+                                        <div className="flex mb-0.5"><strong className="w-24">Ngày báo giá:</strong> <EditableInput value={headerInfo.date} onChange={(v) => setHeaderInfo({ ...headerInfo, date: v })} isEditing={!isPreview} /></div>
                                     </div>
                                 </div>
-                                <div className="font-bold mb-4 text-[#233f8d] text-[13px] text-center italic">
+                                <div className="font-bold mb-3 text-[#233f8d] text-[12px] text-center italic">
                                     <EditableInput value={headerInfo.introText.split(' xin trân trọng')[0]} onChange={(v) => setHeaderInfo({ ...headerInfo, introText: v + ' xin trân trọng gửi tới Quý khách hàng dự toán chi tiết giải pháp như sau:' })} isEditing={!isPreview} />
                                 </div>
                             </>
