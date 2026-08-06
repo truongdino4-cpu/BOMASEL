@@ -637,13 +637,14 @@
                                     <td className="border border-black p-1 w-10">SL</td>
                                     <td className="border border-black p-1 w-20">Đơn giá</td>
                                     <td className="border border-black p-1 w-24">Thành tiền</td>
+                                    <td className="border border-black p-1 w-32">Ghi chú</td>
                                 </tr>
                             </thead>
                             <tbody>
                                 {detailedData.map((floor) => (
                                     <Fragment key={floor.id}>
                                         <tr className="bg-[#e2efda] font-bold text-sm avoid-break">
-                                            <td colSpan={7} className="border border-black p-2 uppercase">
+                                            <td colSpan={8} className="border border-black p-2 uppercase">
                                                 <EditableInput value={floor.name} onChange={() => {}} isEditing={false} />
                                             </td>
                                         </tr>
@@ -651,7 +652,7 @@
                                             <Fragment key={system.id}>
                                                 <tr className="font-bold bg-white avoid-break">
                                                     <td className="border border-black p-1 text-center text-sm">{sysIndex + 1}</td>
-                                                    <td colSpan={6} className="border border-black p-1 text-sm uppercase">{system.name}</td>
+                                                    <td colSpan={7} className="border border-black p-1 text-sm uppercase">{system.name}</td>
                                                 </tr>
                                                 {system.items.map((item, itemIdx) => (
                                                     <tr key={item.id} className="group hover:bg-gray-50 avoid-break bg-white">
@@ -701,6 +702,21 @@
                                                         <td className="border border-black p-1 text-right align-middle font-bold print-td">
                                                             {formatMoney(item.total)}
                                                         </td>
+                                                        <td className="border border-black p-1 align-middle print-td">
+                                                            <EditableInput 
+                                                                value={(item.notes && item.notes[floor.id]) || ''} 
+                                                                onChange={(v) => {
+                                                                    setBomMap(prev => ({
+                                                                        ...prev,
+                                                                        items: prev.items.map(i => i.id === item.id ? { ...i, notes: { ...(i.notes || {}), [floor.id]: v } } : i)
+                                                                    }));
+                                                                }} 
+                                                                placeholder="Vị trí lắp đặt..." 
+                                                                className="text-[11px] italic text-gray-700" 
+                                                                isTextArea={true} 
+                                                                isEditing={!isPreview} 
+                                                            />
+                                                        </td>
                                                     </tr>
                                                 ))}
                                             </Fragment>
@@ -743,6 +759,16 @@
                                                     </div>
                                                 </td>
                                                 <td className="border border-black p-1 text-right align-middle font-bold print-td w-24">{formatMoney((parseFloat(item.qty)||0) * (parseFloat(item.price)||0))}</td>
+                                                <td className="border border-black p-1 align-middle print-td w-32">
+                                                    <EditableInput 
+                                                        value={item.detailNote || ''} 
+                                                        onChange={v => { const newD = [...audioData]; newD[idx].detailNote = v; setAudioData(newD); }} 
+                                                        placeholder="Vị trí lắp đặt..." 
+                                                        className="text-[11px] italic text-gray-700" 
+                                                        isTextArea={true} 
+                                                        isEditing={!isPreview} 
+                                                    />
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>
