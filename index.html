@@ -15,62 +15,57 @@
     <style>
         /* CSS cho chế độ Xem trước & In ấn */
         @media print {
-            /* 1. Ép khổ giấy A4, xóa margin mặc định của trình duyệt */
             @page {
-                size: A4 portrait; /* Mặc định dọc, nếu chọn ngang JS sẽ đổi */
+                size: A4 portrait;
                 margin: 0mm;
             }
 
-            /* 2. Triệt tiêu mọi khoảng trắng, thanh cuộn, màu nền thừa của web */
-            html, body, #root, .min-h-screen {
+            /* Xóa vạch xám nền thừa khi in */
+            html, body, #root, .min-h-screen, .preview-mode-active {
                 width: 100% !important;
                 height: auto !important;
                 min-height: 0 !important;
                 margin: 0 !important;
                 padding: 0 !important;
                 background-color: white !important;
+                background-image: none !important;
                 overflow: visible !important;
             }
 
-            /* 3. Ẩn thanh công cụ điều khiển */
             .print-hidden {
                 display: none !important;
             }
 
-            /* 4. Khung giấy in - Xóa bóng đổ (shadow), viền */
             .print-page {
                 box-shadow: none !important;
                 background-color: transparent !important;
                 margin: 0 !important;
-                padding: 10mm 10mm !important; /* Lề trong của giấy A4 khi in */
+                padding: 10mm 10mm !important;
                 width: 100% !important;
                 max-width: 100% !important;
                 border: none !important;
             }
 
-            /* 5. Chống cắt nửa dòng (Page break logic) */
+            /* Chống cắt nửa dòng và neo tiêu đề */
             tr {
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
             }
-            
-            /* Gắn neo các tiêu đề không được tách rời nội dung phía dưới */
-            .print-keep-together {
+            .print-category-header, .print-floor-header, .print-keep-together {
                 page-break-after: avoid !important;
                 break-after: avoid !important;
             }
 
-            /* 6. Ép trình duyệt in màu nền của bảng (quan trọng) */
+            /* Ép trình duyệt in màu nền */
             * {
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
         }
 
-        /* CSS Màn hình Xem trước bản in (Giả lập giấy A4) */
         .preview-mode-active {
-            background-color: #e5e7eb; /* Nền xám ngoài rìa */
-            padding-top: 80px; /* Chừa chỗ cho Toolbar ghim cố định */
+            background-color: #e5e7eb;
+            padding-top: 80px;
             padding-bottom: 40px;
             min-height: 100vh;
         }
@@ -88,15 +83,12 @@
             background-color: white;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
             margin: 0 auto;
-            /* Padding giả lập lề giấy trên màn hình */
             padding: 15mm 15mm; 
         }
 
-        /* Kích thước khổ A4 giả lập trên màn hình */
         .portrait-a4 { width: 210mm; }
         .landscape-a4 { width: 297mm; }
 
-        /* Tinh chỉnh Input tĩnh khi in */
         .editable-input-static {
             white-space: pre-wrap;
             word-wrap: break-word;
@@ -110,22 +102,13 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo } = React;
 
-        // ==========================================
-        // COMPONENT SVG ICONS (KHÔNG DÙNG THƯ VIỆN NGOÀI)
-        // ==========================================
         const IconSave = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>);
         const IconFolderOpen = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>);
         const IconPrinter = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>);
         const IconX = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>);
-        const IconPlus = () => (<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>);
-        const IconTrash = () => (<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>);
 
-        // ==========================================
-        // COMPONENT EDITABLE INPUT
-        // ==========================================
         const EditableInput = ({ value, onChange, placeholder = "", isNumber = false, className = "", isPreview = false, multiLine = false, prefix = "" }) => {
             const displayValue = isNumber ? (value > 0 ? Number(value).toLocaleString('en-US') : "") : value;
-
             if (isPreview) {
                 return (
                     <div className={`editable-input-static ${className}`}>
@@ -133,7 +116,6 @@
                     </div>
                 );
             }
-
             return multiLine ? (
                 <textarea
                     value={value || ""}
@@ -157,11 +139,7 @@
             );
         };
 
-        // ==========================================
-        // MAIN APP COMPONENT
-        // ==========================================
         const QuotationTool = () => {
-            // Hàm lấy ngày hiện tại (Real-time Date)
             const getCurrentDate = () => {
                 const today = new Date();
                 const dd = String(today.getDate()).padStart(2, '0');
@@ -179,10 +157,8 @@
             const [vatRate, setVatRate] = useState(8);
             const [popupMsg, setPopupMsg] = useState('');
             
-            // Theo dõi thay đổi (Unsaved Changes)
             const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
             const isInitialMount = useRef(true);
-
             const fileInputRef = useRef(null);
 
             const [companyInfo, setCompanyInfo] = useState({
@@ -193,10 +169,9 @@
                 consultant: 'Trần Thu Trang',
                 phone: '0869326776',
                 email: 'trang.tt@asel.vn',
-                date: getCurrentDate() // Gán ngày lúc mở app
+                date: getCurrentDate()
             });
 
-            // --- DỮ LIỆU BẢNG BOM GỐC (Master Data) ---
             const [bomMap, setBomMap] = useState({
                 floors: [
                     { id: 'tret', name: 'Tầng Trệt' },
@@ -204,40 +179,31 @@
                     { id: 't2', name: 'Tầng áp mái' }
                 ],
                 items: [
-                    // I. CHIẾU SÁNG
                     { id: 'i1', category: 'I', categoryName: 'CHIẾU SÁNG', name: 'Bộ đóng cắt 8 kênh Din8s8wi', desc: 'Bộ điều khiển chiếu sáng 8 kênh. Kết hợp đầu vào cho nút công tắc.\nCông suất 10A / 1 kênh.\nHỗ trợ đóng cắt tải 120 đến 240 Volt 50/60 Hz.', brand: 'CRESTRON - USA/MEXICO', unit: 'Bộ', price: 660, quantities: { tret: 3, t1: 2, t2: 3 }, isDinController: true },
                     { id: 'i2', category: 'I', categoryName: 'CHIẾU SÁNG', name: 'Bộ điều khiển đèn Dali Din Dli', desc: '1 kênh điều khiển, mỗi kênh lên đến 64 drivers.\nCó thể điều khiển từng bóng hoặc group nhiều đèn linh hoạt trong việc điều khiển kịch bản.', brand: 'CRESTRON - USA/MEXICO', unit: 'Bộ', price: 1000, quantities: { tret: 1, t1: 1, t2: 1 } },
                     { id: 'i3', category: 'I', categoryName: 'CHIẾU SÁNG', name: 'Cảm biến gắn trần', desc: '(đã bao gồm relay Omron 220V) tích hợp điện thông minh cài đặt chuyên sâu theo khung giờ và điều chỉnh cường độ sáng đèn dimmer.\nGóc quét 360°, bán kính quét tối đa 4.5m.\nCó thể điều chỉnh độ nhạy và thời gian bật tắt.\nCài đặt và hiệu chỉnh bằng Remote.', brand: 'THEBEN GERMANY-EU', unit: 'Chiếc', price: 135, quantities: { tret: 5, t1: 4, t2: 6 }, isInput: true },
                     { id: 'i4', category: 'I', categoryName: 'CHIẾU SÁNG', name: 'Cảm biến cầu thang', desc: '(đã bao gồm relay Omron 220V) tích hợp điện thông minh cài đặt chuyên sâu theo khung giờ và điều chỉnh cường độ sáng đèn dimmer.\nGóc quét 170°, bán kính quét tối đa 6m.\nCó thể điều chỉnh độ nhạy và thời gian bật tắt.', brand: 'THEBEN GERMANY-PRC', unit: 'Chiếc', price: 150, quantities: { tret: 1, t1: 0, t2: 0 }, isInput: true },
                     
-                    // II. RÈM
                     { id: 'r1', category: 'II', categoryName: 'RÈM', name: 'Bộ đóng cắt cho rèm Din8s8wi', desc: 'Bộ điều khiển rèm động cơ.\nCông suất 10A / 1 kênh.\nHỗ trợ đóng cắt tải 120 đến 240 Volt 50/60 Hz.', brand: 'CRESTRON - USA/MEXICO', unit: 'Bộ', price: 660, quantities: { tret: 3, t1: 1, t2: 1 }, isDinController: true },
                     
-                    // III. PHÍM BẤM
                     { id: 'p1', category: 'III', categoryName: 'Phím bấm, màn hình, công tắc', name: 'Màn hình cảm ứng 10 inch', desc: 'Màn hình cảm ứng gắn tường chuyên dụng loại 10 inch nguồn POE, đi dây cố định, công nghệ cảm ứng điện dung. Hiển thị hình ảnh chuẩn HD.\nĐiều khiển và mô phỏng trực quan tổng thể hệ thống, kết nối chuông hình.\nCảm ứng tiệm cận khi đến gần tự động sáng màn hình.', brand: 'CRESTRON - USA/MEXICO', unit: 'Chiếc', price: 4500, quantities: { tret: 1, t1: 0, t2: 0 } },
                     { id: 'p2', category: 'III', categoryName: 'Phím bấm, màn hình, công tắc', name: 'Key pad', desc: 'Keypad Phím bấm thông minh gắn tường - Phím vuông.\nKết hợp cảm biến ánh sáng khi trời tối nút bấm sẽ phát sáng.\nCó 2,4,6,8 hoặc 10 nút. Mỗi nút lập trình được nhiều chức năng, có chế độ ấn và ấn giữ.', brand: 'CRESTRON - USA/MEXICO', unit: 'Chiếc', price: 580, quantities: { tret: 2, t1: 2, t2: 4 } },
                     { id: 'p3', category: 'III', categoryName: 'Phím bấm, màn hình, công tắc', name: 'Phím Pico loại 4 nút', desc: 'Công tắc không dây Pico 4 nút, biểu tượng đèn.\nLoại gắn tường, 1 cột 4 nút chức năng.', brand: 'LUTRON - USA/PRC', unit: 'Chiếc', price: 115, quantities: { tret: 0, t1: 1, t2: 1 } },
                     { id: 'p4', category: 'III', categoryName: 'Phím bấm, màn hình, công tắc', name: 'Phím Pico loại 8 nút', desc: 'Công tắc không dây Pico 8 nút, biểu tượng đèn.\nLoại để bàn, 2 cột 4 nút chức năng.', brand: 'LUTRON - USA/PRC', unit: 'Chiếc', price: 230, quantities: { tret: 2, t1: 0, t2: 0 } },
-                    
-                    // Công tắc cơ
                     { id: 'm1', category: 'III', categoryName: 'Phím bấm, màn hình, công tắc', name: 'Công tắc cơ 4 nút', desc: '', brand: '', unit: 'Chiếc', price: 0, quantities: { tret: 2, t1: 4, t2: 5 }, isMechanical: true, buttons: 4 },
                     { id: 'm2', category: 'III', categoryName: 'Phím bấm, màn hình, công tắc', name: 'Công tắc cơ 3 nút', desc: '', brand: '', unit: 'Chiếc', price: 0, quantities: { tret: 2, t1: 1, t2: 4 }, isMechanical: true, buttons: 3 },
                     { id: 'm3', category: 'III', categoryName: 'Phím bấm, màn hình, công tắc', name: 'Công tắc cơ 2 nút', desc: '', brand: '', unit: 'Chiếc', price: 0, quantities: { tret: 2, t1: 1, t2: 1 }, isMechanical: true, buttons: 2 },
                     { id: 'm4', category: 'III', categoryName: 'Phím bấm, màn hình, công tắc', name: 'Công tắc cơ 1 nút', desc: '', brand: '', unit: 'Chiếc', price: 0, quantities: { tret: 2, t1: 1, t2: 1 }, isMechanical: true, buttons: 1 },
                     
-                    // IV. AN NINH
                     { id: 'v1', category: 'IV', categoryName: 'An ninh', name: 'Cảm biến từ', desc: 'Cảm biến từ an ninh, báo mở cửa.', brand: 'PRC', unit: 'Chiếc', price: 8, quantities: { tret: 4, t1: 0, t2: 0 }, isInput: true },
                     { id: 'v2', category: 'IV', categoryName: 'An ninh', name: 'Cảm biến báo cháy', desc: 'Cảm biến báo cháy phát hiện khói, nhiệt.', brand: 'PRC', unit: 'Chiếc', price: 30, quantities: { tret: 2, t1: 0, t2: 0 } },
                     { id: 'v3', category: 'IV', categoryName: 'An ninh', name: 'Còi', desc: 'Còi báo động an ninh cường độ âm thanh cao.', brand: 'PRC', unit: 'Chiếc', price: 25, quantities: { tret: 1, t1: 0, t2: 0 } },
                     { id: 'v4', category: 'IV', categoryName: 'An ninh', name: 'Bộ báo tin nhắn', desc: 'Nhắn tin SMS và gọi điện trực tiếp đến SĐT đăng ký.', brand: 'ASEL', unit: 'Bộ', price: 500, quantities: { tret: 1, t1: 0, t2: 0 } },
                     
-                    // V. ĐIỀU HÒA
                     { id: 'ac1', category: 'V', categoryName: 'Điều hòa', name: 'Điều khiển điều hòa VRV (Cool Master)', desc: 'Điều khiển và giám sát trạng thái thực tới cả các dàn lạnh trong nhà.\nChỉ cần đi 1 cáp dây kết nối đến dàn nóng trung tâm.\nPhản hồi 02 chiều.', brand: 'COOLAUTOMATION - ISRAEL', unit: 'Bộ', price: 3500, quantities: { tret: 1, t1: 0, t2: 0 } },
                     
-                    // VI. CHUÔNG HÌNH
                     { id: 'c1', category: 'VI', categoryName: 'Chuông hình', name: 'Chuông cửa IP ngoài trời', desc: 'Gắn âm, tích hợp smartphone, xem lịch sử người bấm.\nChất liệu kim loại, camera hồng ngoại. Kết hợp relay mở cổng.\nKết nối đàm thoại với màn hình cảm ứng, điện thoại thông minh từ bất cứ đâu. Góc nhìn 180°.', brand: 'DB-GERMANY', unit: 'Chiếc', price: 1500, quantities: { tret: 1, t1: 0, t2: 0 } },
                     
-                    // VII. TỦ ĐIỆN
                     { id: 't1', category: 'VII', categoryName: 'Tủ điện', name: 'Bộ xử lý mạng bus IP (Din AP4)', desc: '1GB SDRAM and 8 GB flash memory.\nTốc độ xử lý vượt trội 100 Mb/s.\nHỗ trợ RS-232, RS-422, RS-485.\nHỗ trợ điều khiển thiết bị qua hồng ngoại lên đến 1.2MHz.', brand: 'CRESTRON - USA/MEXICO', unit: 'Bộ', price: 2800, quantities: { tret: 1, t1: 0, t2: 0 } },
                     { id: 't2', category: 'VII', categoryName: 'Tủ điện', name: 'Bộ cấp nguồn hệ thống 24V', desc: 'Công suất 60W Cresnet.\nNguồn vào 100-277V AC.', brand: 'CRESTRON - USA/MEXICO', unit: 'Bộ', price: 400, quantities: { tret: 3, t1: 0, t2: 0 } },
                     { id: 't3', category: 'VII', categoryName: 'Tủ điện', name: 'Bộ khuếch đại', desc: 'Bộ khuếch đại tín hiệu hệ thống.', brand: 'CRESTRON - USA/MEXICO', unit: 'Bộ', price: 600, quantities: { tret: 1, t1: 0, t2: 0 } },
@@ -246,7 +212,6 @@
                     { id: 't6', category: 'VII', categoryName: 'Tủ điện', name: 'Vật tư phụ', desc: '(jack chuyên dụng, dây điều khiển, lạt nhựa, băng keo, đầu nối...)', brand: 'VIỆT NAM', unit: 'Gói', price: 500, quantities: { tret: 1, t1: 0, t2: 0 } },
                     { id: 't7', category: 'VII', categoryName: 'Tủ điện', name: 'Tủ điện', desc: 'Tủ điện 2 lớp cánh, sơn tĩnh điện dày 1.5mm', brand: 'VIỆT NAM', unit: 'Bộ', price: 500, quantities: { tret: 2, t1: 0, t2: 0 } },
                     
-                    // VIII. CHI PHÍ TRIỂN KHAI (Liên kết đồng bộ bảng Tổng Hợp)
                     { id: 'cp1', category: 'VIII', categoryName: 'CP - Chi phí triển khai', name: 'Thiết kế lập trình (12%)', desc: '', brand: '', unit: 'Gói', price: 0, quantities: { tret: 1, t1: 0, t2: 0 }, isImplementationCost: true, type: 'design' },
                     { id: 'cp2', category: 'VIII', categoryName: 'CP - Chi phí triển khai', name: 'Thi công lắp đặt (13%)', desc: '', brand: '', unit: 'Gói', price: 0, quantities: { tret: 1, t1: 0, t2: 0 }, isImplementationCost: true, type: 'install' }
                 ]
@@ -265,26 +230,21 @@
                 if (isInitialMount.current) {
                     isInitialMount.current = false;
                 } else {
-                    setHasUnsavedChanges(true); // Đánh dấu là có thay đổi
+                    setHasUnsavedChanges(true);
                 }
             }, [bomMap, companyInfo, audioData, exchangeRate, markup, vatRate, showAudio]);
 
             useEffect(() => {
                 const handleBeforeUnload = (e) => {
                     if (hasUnsavedChanges) {
-                        const msg = "Anh Otiz đã lưu file báo giá chưa? Nếu chưa hãy ấn Hủy (Cancel) và Lưu file nhé!";
                         e.preventDefault();
-                        e.returnValue = msg;
-                        return msg;
+                        e.returnValue = '';
                     }
                 };
                 window.addEventListener('beforeunload', handleBeforeUnload);
                 return () => window.removeEventListener('beforeunload', handleBeforeUnload);
             }, [hasUnsavedChanges]);
 
-            // ==========================================
-            // LOGIC LƯU VÀ MỞ FILE
-            // ==========================================
             const handleSaveFile = () => {
                 const dataToSave = {
                     companyInfo,
@@ -304,7 +264,7 @@
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
                 
-                setHasUnsavedChanges(false); // Đã lưu thành công
+                setHasUnsavedChanges(false);
                 showPopup('Đã lưu file thành công!');
             };
 
@@ -317,7 +277,7 @@
                     try {
                         const parsedData = JSON.parse(event.target.result);
                         if (parsedData.companyInfo && parsedData.bomMap) {
-                            // Cập nhật ngày tháng thành ngày mở file
+                            // Cập nhật ngày tháng thành ngày mở file (Thời gian thực)
                             parsedData.companyInfo.date = getCurrentDate();
 
                             setCompanyInfo(parsedData.companyInfo);
@@ -329,7 +289,7 @@
                                 setVatRate(parsedData.settings.vatRate !== undefined ? parsedData.settings.vatRate : 8);
                                 setShowAudio(parsedData.settings.showAudio !== undefined ? parsedData.settings.showAudio : true);
                             }
-                            // Reset trạng thái sau khi load
+                            
                             setTimeout(() => setHasUnsavedChanges(false), 100);
                             showPopup('Đã tải file dữ liệu thành công!');
                         } else {
@@ -340,7 +300,7 @@
                     }
                 };
                 reader.readAsText(file);
-                e.target.value = ''; // Reset input
+                e.target.value = '';
             };
 
             const showPopup = (msg) => {
@@ -348,9 +308,6 @@
                 setTimeout(() => setPopupMsg(''), 3000);
             };
 
-            // ==========================================
-            // LOGIC TÍNH TOÁN (Đã bao gồm IO mới nhất)
-            // ==========================================
             const calculateAmount = (price, qty) => price * qty;
             const formatCurrency = (val) => Math.round(val).toLocaleString('en-US');
 
@@ -368,25 +325,19 @@
                     bomMap.items.forEach(item => {
                         const qty = item.quantities[floor.id] || 0;
                         if (qty > 0) {
-                            if (item.isInput) {
-                                totalInput += qty;
-                            } else if (item.isMechanical) {
-                                totalInput += qty * (item.buttons || 1);
-                            } else if (item.isDinController) {
-                                totalBilledDin += qty;
-                            }
+                            if (item.isInput) totalInput += qty;
+                            else if (item.isMechanical) totalInput += qty * (item.buttons || 1);
+                            else if (item.isDinController) totalBilledDin += qty;
                         }
                     });
 
                     const neededDin = Math.ceil(totalInput / 8);
-                    
                     calcs[floor.id] = {
                         input: totalInput,
                         neededDin: neededDin,
                         billedDin: totalBilledDin,
-                        diff: Math.max(0, neededDin - totalBilledDin) // Số dương bổ sung
+                        diff: Math.max(0, neededDin - totalBilledDin)
                     };
-                    
                     totalInputAll += totalInput;
                     totalNeededDinAll += neededDin;
                     totalBilledDinAll += totalBilledDin;
@@ -398,20 +349,13 @@
                     billedDin: totalBilledDinAll,
                     diff: Math.max(0, totalNeededDinAll - totalBilledDinAll)
                 };
-
                 return calcs;
             }, [bomMap]);
 
-            // Xử lý Cập nhật BOM thông minh
             const updateBOMQuantity = (itemId, floorId, value) => {
                 const numValue = value === '' ? 0 : parseFloat(value) || 0;
                 setBomMap(prev => {
-                    const newItems = prev.items.map(item => {
-                        if (item.id === itemId) {
-                            return { ...item, quantities: { ...item.quantities, [floorId]: numValue } };
-                        }
-                        return item;
-                    });
+                    const newItems = prev.items.map(item => item.id === itemId ? { ...item, quantities: { ...item.quantities, [floorId]: numValue } } : item);
                     return { ...prev, items: newItems };
                 });
             };
@@ -427,41 +371,25 @@
                 if (!file) return;
                 const reader = new FileReader();
                 reader.onload = (e) => {
-                    if (isAudio) {
-                        setAudioData(prev => prev.map(item => item.id === itemId ? { ...item, image: e.target.result } : item));
-                    } else if (itemId === 'logo') {
-                        setCompanyInfo(prev => ({ ...prev, logo: e.target.result }));
-                    } else {
-                        updateItemField(itemId, 'image', e.target.result);
-                    }
+                    if (isAudio) setAudioData(prev => prev.map(item => item.id === itemId ? { ...item, image: e.target.result } : item));
+                    else if (itemId === 'logo') setCompanyInfo(prev => ({ ...prev, logo: e.target.result }));
+                    else updateItemField(itemId, 'image', e.target.result);
                 };
                 reader.readAsDataURL(file);
             };
 
-            // Nhóm dữ liệu theo Hạng mục
             const groupedItems = useMemo(() => {
                 const groups = {};
                 bomMap.items.forEach(item => {
-                    // Nếu số lượng = 0 ở tất cả các tầng (và không phải cp triển khai) thì bỏ qua
                     const hasQuantity = bomMap.floors.some(f => (item.quantities[f.id] || 0) > 0);
                     if (!hasQuantity && !item.isImplementationCost) return;
-
                     const catKey = `${item.category}-${item.categoryName}`;
-                    if (!groups[catKey]) {
-                        groups[catKey] = {
-                            category: item.category,
-                            name: item.categoryName,
-                            items: []
-                        };
-                    }
+                    if (!groups[catKey]) groups[catKey] = { category: item.category, name: item.categoryName, items: [] };
                     groups[catKey].items.push(item);
                 });
                 return groups;
             }, [bomMap]);
 
-            // ==========================================
-            // RENDER CÁC BẢNG (BOM, CHI TIẾT, TỔNG HỢP)
-            // ==========================================
             const renderHeader = () => (
                 <div className="flex justify-between items-start mb-8 text-sm relative">
                     <div className="w-1/2 pr-4 relative">
@@ -507,7 +435,6 @@
                 </div>
             );
 
-            // BẢNG 1: TỔNG HỢP (SUMMARY)
             const renderSummaryTable = () => {
                 let totalHardware = 0;
                 let costIndex = 5;
@@ -515,7 +442,7 @@
                 return (
                     <div className="text-sm">
                         {renderHeader()}
-                        <h2 className="text-center font-bold text-lg mb-6 text-blue-900 text-left">ASEL VIỆT NAM xin trân trọng gửi tới Quý khách hàng dự toán chi tiết giải pháp như sau:</h2>
+                        <h2 className="font-bold text-lg mb-6 text-blue-900 text-left">ASEL VIỆT NAM xin trân trọng gửi tới Quý khách hàng dự toán chi tiết giải pháp như sau:</h2>
                         
                         <table className="w-full border-collapse border border-black mb-8">
                             <thead>
@@ -543,7 +470,6 @@
                                     );
                                 })}
                                 
-                                {/* Dòng chi phí thiết kế & thi công (gộp cột) */}
                                 {bomMap.items.filter(i => i.isImplementationCost).map(item => {
                                     costIndex++;
                                     const costVal = item.type === 'design' ? totalHardware * 0.12 : totalHardware * 0.13;
@@ -567,7 +493,6 @@
                                     );
                                 })}
 
-                                {/* Chốt Tổng (Gộp cột text) */}
                                 <tr className="bg-green-100 print-keep-together border-b border-black">
                                     <td colSpan="2" className="border border-black p-2 text-right font-bold">TỔNG GIÁ TRỊ SMARTHOME</td>
                                     <td className="border border-black p-2 text-right font-bold text-red-600">{formatCurrency(totalHardware * 1.25)}</td>
@@ -583,7 +508,6 @@
                             </tbody>
                         </table>
 
-                        {/* Option Âm thanh */}
                         {showAudio && (
                             <div className="mt-8">
                                 <div className="font-bold text-red-600 mb-2 print-keep-together">HẠNG MỤC NÂNG CAO:<br/>OPTION (ÂM THANH ĐA VÙNG)</div>
@@ -632,12 +556,11 @@
                 );
             };
 
-            // BẢNG 2: CHI TIẾT TẦNG
             const renderDetailedTable = () => {
                 return (
                     <div className="text-xs">
                         {renderHeader()}
-                        <table className="w-full border-collapse border border-black table-fixed">
+                        <table className="w-full border-collapse border border-black">
                             <thead>
                                 <tr className="bg-yellow-100 print-category-header">
                                     <th className="border border-black p-2 w-10 text-center">STT</th>
@@ -709,7 +632,6 @@
                 );
             };
 
-            // BẢNG 3: QUẢN LÝ BOM (NỘI BỘ)
             const renderBOM = () => (
                 <div className="overflow-x-auto text-sm">
                     <table className="w-full border-collapse border border-gray-300 min-w-max">
@@ -788,9 +710,6 @@
                 </div>
             );
 
-            // ==========================================
-            // MAIN RENDER (GIAO DIỆN)
-            // ==========================================
             return (
                 <div className={`min-h-screen font-sans ${isPreview ? 'preview-mode-active' : 'bg-gray-100 p-4'}`}>
                     {popupMsg && (
@@ -799,7 +718,6 @@
                         </div>
                     )}
 
-                    {/* Toolbar Xem Trước / In Ấn */}
                     {isPreview && (
                         <div className="preview-toolbar bg-gray-900 text-white p-3 flex justify-between items-center print-hidden">
                             <div className="flex items-center gap-4">
@@ -823,7 +741,6 @@
 
                     <div className={`${isPreview ? `preview-page-wrapper ${printLayout === 'portrait' ? 'portrait-a4' : 'landscape-a4'}` : 'max-w-7xl mx-auto bg-white rounded-lg shadow-lg'} print-page`}>
                         
-                        {/* Header Tabs (Chỉ hiện khi soạn thảo) */}
                         {!isPreview && (
                             <div className="border-b bg-gray-50 rounded-t-lg p-4 flex justify-between items-center print-hidden">
                                 <div className="flex gap-2">
@@ -849,7 +766,6 @@
                             </div>
                         )}
 
-                        {/* Content Area */}
                         <div className={`${isPreview ? '' : 'p-6'}`}>
                             <div className={`${activeTab === 'bom' && !isPreview ? 'block' : 'hidden'}`}>
                                 {renderBOM()}
