@@ -741,13 +741,14 @@
             const renderSummaryTable = () => {
                 let grandTotal = implementationCosts.design + implementationCosts.install;
                 let audioTotal = 0;
+                let globalStt = 1; // Khởi tạo biến đếm STT chạy liên tục cho toàn bảng
 
                 return (
                     <div className="w-full">
                         <h2 className="text-[16px] font-bold text-center mb-4 uppercase">BẢNG DỰ TOÁN TỔNG HỢP PHƯƠNG ÁN {headerInfo.plan}</h2>
                         <table className="w-full border-collapse border border-black mb-4 text-[13px]">
                             <thead>
-                                <tr className="bg-[#a9d08e] font-bold text-center">
+                                <tr className="bg-[#a9d08e] font-bold text-center avoid-break">
                                     <td className="border border-black p-1 w-10">STT</td>
                                     <td className="border border-black p-1">HẠNG MỤC ĐIỀU KHIỂN</td>
                                     <td className="border border-black p-1 w-28">Giá trị ({currency})</td>
@@ -761,19 +762,19 @@
                                     
                                     return (
                                         <Fragment key={floor.id}>
-                                            <tr className="font-bold bg-gray-50 avoid-break-after">
+                                            <tr className="font-bold bg-gray-50 avoid-break">
                                                 <td className="border border-black p-1 text-center"></td>
                                                 <td className="border border-black p-1 uppercase">{floor.name}</td>
                                                 <td className="border border-black p-1 text-center">{formatMoney(floorTotal)}</td>
                                             </tr>
-                                            {floor.systems.map((sys, sysIndex) => {
+                                            {floor.systems.map((sys) => {
                                                 let sysTotal = sys.items.reduce((s, i) => s + i.total, 0);
                                                 return (
-                                                    <tr key={sys.id} className="bg-white">
-                                                        <td className="border border-black p-1 text-center">{sysIndex + 1}</td>
+                                                    <tr key={sys.id} className="avoid-break bg-white">
+                                                        <td className="border border-black p-1 text-center">{globalStt++}</td>
                                                         <td className="border border-black p-1 pl-4">
-                                                            {sys.name}
-                                                            <EditableInput value={sys.note} onChange={(v) => {}} placeholder="Ghi chú..." isTextArea={true} isEditing={!isPreview} className="text-[11px] block text-gray-600 mt-0.5" />
+                                                            <span className="uppercase">{sys.name}</span>
+                                                            <EditableInput value={sys.note} onChange={(v) => {}} placeholder="Ghi chú..." isTextArea={true} isEditing={!isPreview} className="text-[11px] block font-normal text-gray-600 mt-0.5 normal-case" />
                                                         </td>
                                                         <td className="border border-black p-1 text-center">{formatMoney(sysTotal)}</td>
                                                     </tr>
@@ -783,47 +784,51 @@
                                     );
                                 })}
 
-                                {detailedData.find(f => f.id === 'common')?.systems.map((sys, idx) => {
+                                {detailedData.find(f => f.id === 'common')?.systems.map((sys) => {
                                     let sysTotal = sys.items.reduce((s, i) => s + i.total, 0);
                                     grandTotal += sysTotal;
-                                    let defaultNote = sys.id.includes('An ninh') ? '- Báo trạng thái cửa ra vào tầng Trệt và sân thượng' : (sys.id.includes('Điều hòa') ? '- Điều khiển toàn bộ dàn lạnh trong nhà.' : '');
+                                    let defaultNote = sys.id.includes('An ninh') ? '- Báo trạng thái cửa ra vào tầng Trệt và cửa ra vào sân thượng' : (sys.id.includes('Điều hòa') ? '- Điều khiển toàn bộ dàn lạnh trong nhà.' : '');
                                     return (
-                                        <tr className="font-bold bg-white" key={sys.id}>
-                                            <td className="border border-black p-1 text-center">{detailedData.length + idx}</td>
-                                            <td className="border border-black p-1 uppercase">
-                                                {sys.name}
-                                                <EditableInput value={sys.note || defaultNote} onChange={() => {}} placeholder="Ghi chú..." isTextArea={true} isEditing={!isPreview} className="text-[11px] block font-normal text-gray-600 mt-0.5" />
+                                        <tr className="font-bold avoid-break bg-white" key={sys.id}>
+                                            <td className="border border-black p-1 text-center">{globalStt++}</td>
+                                            <td className="border border-black p-1">
+                                                <span className="uppercase">{sys.name}</span>
+                                                <EditableInput value={sys.note || defaultNote} onChange={() => {}} placeholder="Ghi chú..." isTextArea={true} isEditing={!isPreview} className="text-[11px] block font-normal text-gray-600 mt-0.5 normal-case" />
                                             </td>
                                             <td className="border border-black p-1 text-center">{formatMoney(sysTotal)}</td>
                                         </tr>
                                     );
                                 })}
 
-                                <tr className="font-bold bg-white avoid-break-after">
-                                    <td className="border border-black p-1 text-center border-b-0">{bomMap.items.length + 1}</td>
-                                    <td className="border border-black p-1 uppercase border-b-0 border-r-0">CHI PHÍ TRIỂN KHAI GIÁM SÁT, LẮP ĐẶT</td>
+                                <tr className="font-bold avoid-break bg-white">
+                                    <td className="border border-black p-1 text-center border-b-0">{globalStt++}</td>
+                                    <td className="border border-black p-1 border-b-0 border-r-0">
+                                        <span className="uppercase">CHI PHÍ TRIỂN KHAI GIÁM SÁT, LẮP ĐẶT</span>
+                                    </td>
                                     <td className="border border-black p-1 text-center border-b-0 border-l-0">{formatMoney(implementationCosts.install)}</td>
                                 </tr>
-                                <tr className="bg-white">
+                                <tr className="bg-white avoid-break">
                                    <td className="border border-black p-1 border-t-0"></td>
                                    <td className="border border-black p-1 border-t-0 border-r-0" colSpan={2}>
-                                     <EditableInput value={"- Triển khai bản vẽ nguyên lý điện thông minh, cập nhật bản vẽ và hướng dẫn thi công định kì\n- Đấu nối tủ điện, lắp đặt các thiết bị điều khiển.\n- Đấu nối công tắc, cảm biến.\n- Kết nối điều hòa.\n- Chạy thử, hiệu chỉnh, thay đổi, bàn giao, bảo hành."} onChange={() => {}} isTextArea={true} isEditing={!isPreview} className="text-[11px] block text-gray-600 leading-tight" />
+                                     <EditableInput value={"- Triển khai bản vẽ nguyên lý điện thông minh, cập nhật bản vẽ và hướng dẫn thi công định kì\n- Đấu nối tủ điện, lắp đặt các thiết bị điều khiển.\n- Đấu nối công tắc, cảm biến.\n- Kết nối điều hòa.\n- Chạy thử, hiệu chỉnh, thay đổi, bàn giao, bảo hành."} onChange={() => {}} isTextArea={true} isEditing={!isPreview} className="text-[11px] block font-normal text-gray-600 mt-1 leading-tight normal-case" />
                                    </td>
                                 </tr>
 
-                                <tr className="font-bold bg-white avoid-break-after">
-                                    <td className="border border-black p-1 text-center border-b-0">{bomMap.items.length + 2}</td>
-                                    <td className="border border-black p-1 uppercase border-b-0 border-r-0">CHI PHÍ THIẾT KẾ, LẬP TRÌNH, SETUP HỆ THỐNG</td>
+                                <tr className="font-bold avoid-break bg-white">
+                                    <td className="border border-black p-1 text-center border-b-0">{globalStt++}</td>
+                                    <td className="border border-black p-1 border-b-0 border-r-0">
+                                        <span className="uppercase">CHI PHÍ THIẾT KẾ, LẬP TRÌNH, SETUP HỆ THỐNG</span>
+                                    </td>
                                     <td className="border border-black p-1 text-center border-b-0 border-l-0">{formatMoney(implementationCosts.design)}</td>
                                 </tr>
-                                <tr className="bg-white">
+                                <tr className="bg-white avoid-break">
                                    <td className="border border-black p-1 border-t-0"></td>
                                    <td className="border border-black p-1 border-t-0 border-r-0" colSpan={2}>
-                                     <EditableInput value={"- Lập trình hệ thống Smart home. Điều khiển toàn bộ các hạng mục: chiếu sáng, rèm, điều hòa, an ninh, cổng....\n- Lập trình, thiết kế giao diện trên Smart phone\n- Lập trình, thiết kế giao diện trên màn hình cảm ứng"} onChange={() => {}} isTextArea={true} isEditing={!isPreview} className="text-[11px] block text-gray-600 leading-tight" />
+                                     <EditableInput value={"- Lập trình hệ thống Smart home. Điều khiển toàn bộ các hạng mục: chiếu sáng, rèm, điều hòa, an ninh, cổng....\n- Lập trình, thiết kế giao diện trên Smart phone\n- Lập trình, thiết kế giao diện trên màn hình cảm ứng"} onChange={() => {}} isTextArea={true} isEditing={!isPreview} className="text-[11px] block font-normal text-gray-600 mt-1 leading-tight normal-case" />
                                    </td>
                                 </tr>
 
-                                <tr className="bg-[#e2efda] font-bold">
+                                <tr className="bg-[#e2efda] font-bold avoid-break">
                                     <td className="border border-black p-2 text-center" colSpan={2}>TỔNG GIÁ TRỊ SMARTHOME</td>
                                     <td className="border border-black p-2 text-right font-bold">{formatMoney(grandTotal)}</td>
                                 </tr>
