@@ -763,7 +763,7 @@
                                     return (
                                         <Fragment key={floor.id}>
                                             <tr className="font-bold bg-gray-50 avoid-break">
-                                                <td className="border border-black p-1 text-center"></td>
+                                                <td className="border border-black p-1 text-center font-bold">{globalStt++}</td>
                                                 <td className="border border-black p-1 uppercase">{floor.name}</td>
                                                 <td className="border border-black p-1 text-center">{formatMoney(floorTotal)}</td>
                                             </tr>
@@ -771,7 +771,7 @@
                                                 let sysTotal = sys.items.reduce((s, i) => s + i.total, 0);
                                                 return (
                                                     <tr key={sys.id} className="avoid-break bg-white">
-                                                        <td className="border border-black p-1 text-center">{globalStt++}</td>
+                                                        <td className="border border-black p-1 text-center"></td>
                                                         <td className="border border-black p-1 pl-4">
                                                             <span className="uppercase">{sys.name}</span>
                                                             <EditableInput value={sys.note} onChange={(v) => {}} placeholder="Ghi chú..." isTextArea={true} isEditing={!isPreview} className="text-[11px] block font-normal text-gray-600 mt-0.5 normal-case" />
